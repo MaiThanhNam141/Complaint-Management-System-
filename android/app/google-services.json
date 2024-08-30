@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665847778498",
+    "project_id": "disastermanagerment-b0a31",
+    "storage_bucket": "disastermanagerment-b0a31.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665847778498:android:3c9632c52129ccf02d7f5b",
+        "android_client_info": {
+          "package_name": "com.quanlysuco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAK3VkvMdtl_m1AylKivsBc4TcnV-MmMO8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
