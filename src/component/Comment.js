@@ -1,35 +1,63 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Text, View, StyleSheet, TextInput, FlatList, Image, KeyboardAvoidingView, ToastAndroid } from 'react-native';
+import { Alert, Text, View, StyleSheet, TextInput, FlatList, Image, KeyboardAvoidingView, ToastAndroid, ActivityIndicator } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { getCurrentUser, getUserRef } from '../context/FirestoreFunction';
+import firestore from '@react-native-firebase/firestore';
 
-const Comment = ({ post, onClose, onSubmitComment, onLogin }) => {
+const Comment = ({ post, onClose, onLogin, user }) => {
     const [commentInput, setCommentInput] = useState('');
-    const [ user, setUser] = useState('');
+    const [comment, setComment] = useState(post.comments);
+    const userRef = getUserRef();
+    const [loading, setLoading] = useState(true);
+    const [userDataMap, setUserDataMap] = useState({});
+    const defaultImage = 'https://firebasestorage.googleapis.com/v0/b/disastermanagerment-b0a31.appspot.com/o/users%2Fdefault.png?alt=media&token=5b09c058-8392-424b-bb97-177a4b2c5e76';
 
-    const fetchUserInfoFromReference = async () => {
+    const fetchUserData = async (ref) => {
         try {
-            const userRef = getUserRef();
-            const userDoc = await userRef.get();
-            const data = userDoc.data();
-            if(data){
-                setUser(data)
+            const userSnapshot = await firestore().collection('users').doc(ref.toString()).get();
+            if (userSnapshot.exists) {
+                return userSnapshot.data();
+            } else {
+                console.log("Người dùng không tồn tại:", userRef.path);
             }
         } catch (error) {
-            console.error("Data: ", error);
+            console.error("Lỗi khi lấy dữ liệu user:", error);
         }
+        return null;
     };
 
     useEffect(() => {
-        fetchUserInfoFromReference();
-    }, [])
+        const fetchCommentsUsers = async () => {
+            try {
+                const userMap = { ...userDataMap };
+                const promises = comment?.map(async (item) => {
+                    const userRef = item.user;
+                    const userId = userRef.path.split('/').pop();
+                    if (!userMap[userId]) {
+                        const userData = await fetchUserData(userId);
+                        userMap[userId] = userData;
+                    }
+                });
+                if (promises) {
+                    await Promise.all(promises);
+                }
+                setUserDataMap(userMap);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCommentsUsers();
+    }, [comment]);
 
     const handleSendComment = () => {
         try {
-            if (commentInput.trim().length >= 5){
+            if (commentInput.trim().length >= 5) {
                 setCommentInput('');
-                const user = getCurrentUser();
-                if (!user || !user.uid) { 
+                const currentUser = getCurrentUser();
+                if (!currentUser) {
                     Alert.alert(
                         'Đã xảy ra lỗi',
                         'Bạn cần đăng nhập để like bài viết này',
@@ -50,33 +78,74 @@ const Comment = ({ post, onClose, onSubmitComment, onLogin }) => {
         }
     }
 
+    const onSubmitComment = async (comment, postid) => {
+        try {
+            const newComment = {
+                user: userRef,
+                contentComment: comment,
+                date: firestore.Timestamp.now(),
+            };
+            await firestore()
+                .collection('articles')
+                .doc(postid.toString())
+                .update({
+                    comments: firestore.FieldValue.arrayUnion(newComment),
+                })
+                .then(() => {
+                    ToastAndroid.show("Bình luận thành công", ToastAndroid.SHORT);
+                    setComment((prevComment) => [...prevComment, newComment]);
+                })
+                .catch((error) => {
+                    console.log(error);
+                })
+        } catch (error) {
+            console.error("Lỗi khi bình luận: ", error);
+            ToastAndroid.show("Bình luận thất bại", ToastAndroid.SHORT);
+        }
+    };
+
     return (
         <KeyboardAvoidingView style={styles.backgroundContainer}>
             <View style={styles.title}>
                 <Text style={{ fontWeight: '600', fontSize: 25 }}>Bình luận</Text>
                 <MaterialIcons name={"close"} size={30} color={"#000"} onPress={onClose} />
             </View>
+            {loading ? <ActivityIndicator size={'large'} /> : null}
             <View style={styles.content}>
-                {post?.comment?.length > 0 ? (
+                {comment?.length > 0 ? (
                     <FlatList
-                        data={post.comment}
+                        data={comment}
                         showsVerticalScrollIndicator={true}
-                        renderItem={({ item }) => (
-                            <View style={styles.commentItem}>
-                                <Image source={{ uri: item.photoURL }} style={styles.commentPhoto} />
-                                <View>
-                                    <View style={{ backgroundColor: '#E7E7E7', paddingVertical: 3, paddingHorizontal: 3, borderRadius: 5, maxWidth:320 }}>
-                                        <Text style={styles.commentDisplayName}>
-                                            {item.displayName}
-                                        </Text>
-                                        <Text style={styles.commentContent}>
-                                            {item.contentComment}
+                        renderItem={({ item }) => {
+                            const userId = item.user.path.split('/').pop();
+                            const user = userDataMap[userId];
+                            return (
+                                <View style={styles.commentItem}>
+                                    <Image
+                                        source={{ uri: user?.photoURL || defaultImage }}
+                                        style={styles.commentPhoto}
+                                    />
+                                    <View>
+                                        <View style={{ backgroundColor: '#E7E7E7', paddingVertical: 3, paddingHorizontal: 3, borderRadius: 5, maxWidth: 320 }}>
+                                            <Text style={styles.commentDisplayName}>
+                                                {user?.displayName || "Tên hiển thị"}
+                                                {userId === 'E39uuBnnF7f7OxcltOnNid44OXY2' && (
+                                                    <View style={{backgroundColor: 'red', paddingHorizontal:10, borderRadius:100,}}>
+                                                        <Text style={{ fontSize: 12,  color:'#fff' }}><MaterialIcons name="shield" size={10} color="#fff" /> Admin</Text>
+                                                    </View>
+                                                )}
+                                            </Text>
+                                            <Text style={styles.commentContent}>
+                                                {item.contentComment}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.commentDate}>
+                                            {item.date ? new Date(item.date._seconds * 1000).toLocaleString() : "Ngày hiển thị"}
                                         </Text>
                                     </View>
-                                    <Text style={styles.commentDate}>{item.date.toDate().toLocaleString()}</Text>
                                 </View>
-                            </View>
-                        )}
+                            )
+                        }}
                         keyExtractor={(item) => item.contentComment}
                     />
                 ) : (
@@ -128,7 +197,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 5,
         flexWrap: 'wrap',
-        textAlign:'justify'
+        textAlign: 'justify'
     },
     commentDate: {
         fontSize: 14,
@@ -137,7 +206,7 @@ const styles = StyleSheet.create({
     commentDisplayName: {
         fontSize: 16,
         fontWeight: 'bold',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
     },
     commentPhoto: {
         width: 30,
@@ -168,7 +237,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: 'center',
         marginHorizontal: 10,
-        position:'absolute',
-        bottom:10
+        position: 'absolute',
+        bottom: 10,
+        backgroundColor: 'white'
     }
 });

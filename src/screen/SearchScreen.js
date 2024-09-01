@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Share, Alert, SafeAreaView, View, TextInput, FlatList, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import { ToastAndroid, Share, Alert, SafeAreaView, View, TextInput, FlatList, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Modal } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import firestore from '@react-native-firebase/firestore';
 import { getCurrentUser, updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
+import Comment from '../component/Comment';
+import PostDetailsModal from '../component/PostDetailsModal';
 
 const SearchScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -10,6 +12,10 @@ const SearchScreen = () => {
     const [loading, setLoading] = useState(false);
     const [debounceTimeout, setDebounceTimeout] = useState(null);
     const [commentModal, setCommentModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [isLiked, setIsLiked] = useState([]);
+
     const handleSearch = (query) => {
         setSearchQuery(query);
         if (!query.trim() || query.length < 3) {
@@ -22,7 +28,51 @@ const SearchScreen = () => {
             searchArticles(query);
         }, 500));
     };
-
+    const handleLogin = () => {
+        navigation.jumpTo('Hồ sơ')
+    }
+    const onCloseModal = () => {
+        setModalVisible(false);
+    };
+    const handleDetailsPress = (post) => {
+        setSelectedPost(post);
+        setModalVisible(true);
+    };
+    const handleLike = (post) => {
+        try {
+            const user = getCurrentUser();
+            if (!user || !user.uid) {
+                Alert.alert(
+                    'Đã xảy ra lỗi',
+                    'Bạn cần đăng nhập để like bài viết này',
+                    [
+                        { text: 'Đăng nhập', onPress: handleLogin },
+                        { text: 'Hủy', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
+                    ]
+                );
+                return;
+            }
+            if (isLiked.includes(post.id)) {
+                setIsLiked(isLiked.filter((id) => id !== post.id));
+                const updatedPost = { ...post, likes: post.likes - 1 };
+                const updatedPosts = titleResults.map((p) => (p.id === post.id ? updatedPost : p));
+                setTitleResults(updatedPosts);
+                updateLikes(post.id, 0);
+                updateLikesArticle(post.id.toString(), post.likes - 1);
+            }
+            else {
+                setIsLiked((prev) =>  [...prev, post.id]);
+                const updatedPost = { ...post, likes: post.likes + 1 };
+                const updatedPosts = titleResults.map((p) => (p.id === post.id ? updatedPost : p));
+                setTitleResults(updatedPosts);
+                updateLikes(post.id);
+                updateLikesArticle(post.id.toString(), post.likes + 1);
+            }
+        } catch (error) {
+            console.error(error);
+            ToastAndroid.show("Thất bại! hãy kiểm tra lại internet", ToastAndroid.SHORT);
+        }
+    };
     const searchArticles = async (query) => {
         setLoading(true);
         try {
@@ -45,49 +95,28 @@ const SearchScreen = () => {
             setLoading(false);
         }
     };
-    const handleLike = (post) => {
-        try {
-            const user = getCurrentUser();
-            if (!user || !user.uid) {
-                Alert.alert(
-                    'Đã xảy ra lỗi',
-                    'Bạn cần đăng nhập để like bài viết này',
-                    [
-                        { text: 'Đăng nhập', onPress: handleLogin },
-                        { text: 'Hủy', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
-                    ]
-                );
-                return;
-            }
-            const updatedPost = { ...post, likes: post.likes + 1 };
-            const updatedPosts = titleResults.map((p) => (p.id === post.id ? updatedPost : p));
-            setTitleResults(updatedPosts);
-            updateLikes(post.id);
-            updateLikesArticle(post.id, post.likes + 1);
-        } catch (error) {
-            ToastAndroid.show("Thất bại! hãy kiểm tra lại internet", ToastAndroid.SHORT);
-        }
-    };
 
     const onShare = async (post) => {
         try {
-            const imageUrl = post?.images[0]?.uri;
+            const imageUrl = post?.reportImage;
             if (!imageUrl) {
-                await Share.share({message: `${post.title}\n${post?.desc}`});
+                await Share.share({ message: `${post.title}\n${post?.desc}` });
                 return;
             }
-
+            let shareMessage = `Người đăng tải: ${post.displayName}\nTiêu đề: ${post.title}\nTình trạng: ${post.status} \nNội dung: ${post?.desc}\n\n`;
+            for (let i = 0; i < imageUrl.length; i++) {
+                shareMessage += `${i + 1}. ${imageUrl[i]}\n`;
+            }
             const shareOptions = {
                 title: 'Chia sẻ bài đăng',
-                message: `${post.title}\n${post?.desc}\n\nXem ảnh tại: ${imageUrl}`,
-                url: imageUrl,
+                message: shareMessage,
             };
-
             await Share.share(shareOptions);
         } catch (error) {
             console.error('Error sharing', error);
         }
     };
+    
     const getStatusText = useCallback((status) => {
         switch (status) {
             case 'Chưa duyệt':
@@ -150,7 +179,7 @@ const SearchScreen = () => {
 
             <View style={styles.postActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item)}>
-                    <MaterialIcons name="thumb-up" size={20} color="#000" />
+                    <MaterialIcons name="thumb-up" size={20} color={isLiked.includes(item.id) ? '#0C6DF2' : '#000'} />
                     <Text style={styles.actionText}>Like</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => handleCommentModal(item)}>
@@ -191,6 +220,9 @@ const SearchScreen = () => {
             </View>
             <Modal visible={commentModal} animationType="slide" onRequestClose={() => setCommentModal(false)} transparent={true}>
                 <Comment post={selectedPost} onClose={() => setCommentModal(false)} onSubmitComment={onSubmitComment} onLogin={handleLogin} />
+            </Modal>
+            <Modal visible={modalVisible} animationType="slide" onRequestClose={onCloseModal}>
+                <PostDetailsModal post={selectedPost} modalVisible={modalVisible} onClose={onCloseModal} />
             </Modal>
             {
                 loading ? <ActivityIndicator size={'large'} /> : renderIndependentResults()

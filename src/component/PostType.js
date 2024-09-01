@@ -5,7 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImageViewing from 'react-native-image-viewing';
 import PostDetailsModal from './PostDetailsModal';
-import { getCurrentUser, getUserInfo, updateLikes, updateLikesArticle, getUserRef } from '../context/FirestoreFunction';
+import { getCurrentUser, getUserInfo, updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
 import Comment from './Comment';
 
 const PostType = ({ route, navigation }) => {
@@ -23,49 +23,12 @@ const PostType = ({ route, navigation }) => {
     const [lastDoc, setLastDoc] = useState(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isLiked, setIsLiked] = useState([]);
-    const userRef = getUserRef();
+
     const onRefresh = () => {
         setInitialLoading(true);
         setRefreshing(true);
     };
-    const onSubmitComment = async (comment, postid) => {
-        try {
-            // Định dạng ngày tháng
-            const date = new Date();
-            const formattedDate = date.toLocaleString('en-US', {
-                timeZone: 'Asia/Ho_Chi_Minh',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                hour12: true,
-            });
-    
-            // Dữ liệu bình luận
-            
-            const newComment = {
-                userRef: userRef,
-                contentComment: comment,
-                date: formattedDate,
-            };
-            console.log(comment, postid, newComment);
-            // Thêm bình luận vào Firestore
-            await firestore()
-                .collection('articles')
-                .doc(postid)
-                .update({
-                    comment: firestore.FieldValue.arrayUnion(newComment),
-                });
-    
-            ToastAndroid.show("Bình luận thành công", ToastAndroid.SHORT);
-        } catch (error) {
-            console.error("Lỗi khi bình luận: ", error);
-            ToastAndroid.show("Bình luận thất bại", ToastAndroid.SHORT);
-        }
-    };
-    
+
     const handleImagePress = (imageIndex, images) => {
         const formattedImages = images.map(image => ({ uri: image }));
         setCurrentImageIndex(imageIndex);
@@ -97,16 +60,18 @@ const PostType = ({ route, navigation }) => {
                 const updatedPosts = posts.map((p) => (p.id === post.id ? updatedPost : p));
                 setPosts(updatedPosts);
                 updateLikes(post.id, 0);
-                updateLikesArticle(post.id, post.likes - 1);
+                updateLikesArticle(post.id.toString(), post.likes - 1);
             }
             else {
+                setIsLiked((prev) => [...prev, post.id]);
                 const updatedPost = { ...post, likes: post.likes + 1 };
                 const updatedPosts = posts.map((p) => (p.id === post.id ? updatedPost : p));
                 setPosts(updatedPosts);
                 updateLikes(post.id);
-                updateLikesArticle(post.id, post.likes + 1);
+                updateLikesArticle(post.id.toString(), post.likes + 1);
             }
         } catch (error) {
+            console.error(error);
             ToastAndroid.show("Thất bại! hãy kiểm tra lại internet", ToastAndroid.SHORT);
         }
     };
@@ -115,7 +80,7 @@ const PostType = ({ route, navigation }) => {
         if (refreshing) {
             setPosts([])
             Promise.all([
-                isArticleLiked(), 
+                isArticleLiked(),
                 fetchPosts()],
             ).then(() => {
                 setRefreshing(false);
@@ -161,18 +126,19 @@ const PostType = ({ route, navigation }) => {
 
     const onShare = async (post) => {
         try {
-            const imageUrl = post?.images[0]?.uri;
+            const imageUrl = post?.reportImage;
             if (!imageUrl) {
-                await Share.share({message: `${post.title}\n${post?.desc}`});
+                await Share.share({ message: `${post.title}\n${post?.desc}` });
                 return;
             }
-
+            let shareMessage = `Người đăng tải: ${post.displayName}\nTiêu đề: ${post.title}\nTình trạng: ${post.status} \nNội dung: ${post?.desc}\n\n`;
+            for (let i = 0; i < imageUrl.length; i++) {
+                shareMessage += `${i + 1}. ${imageUrl[i]}\n`;
+            }
             const shareOptions = {
                 title: 'Chia sẻ bài đăng',
-                message: `${post.title}\n${post?.desc}\n\nXem ảnh tại: ${imageUrl}`,
-                url: imageUrl,
+                message: shareMessage,
             };
-
             await Share.share(shareOptions);
         } catch (error) {
             console.error('Error sharing', error);
@@ -230,7 +196,7 @@ const PostType = ({ route, navigation }) => {
 
         } catch (error) {
             console.error(error);
-        } 
+        }
     };
     const memoizedPosts = useMemo(() => {
         return posts.map(post => (
@@ -311,7 +277,7 @@ const PostType = ({ route, navigation }) => {
                 <PostDetailsModal post={selectedPost} modalVisible={modalVisible} onClose={onCloseModal} />
             </Modal>
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
-                <Comment post={selectedPost} onClose={onCloseModalComment} onSubmitComment={onSubmitComment} onLogin={handleLogin} />
+                <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} user={user} />
             </Modal>
         </SafeAreaView>
     );
