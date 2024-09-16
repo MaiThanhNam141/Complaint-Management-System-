@@ -7,7 +7,6 @@ const PostDetailsModal = ({ post, onClose }) => {
     const [visible, setVisible] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [images, setImages] = useState([]);
-    console.log(post.id, post.location);
     
     const handleImagePress = (imageIndex, images) => {
       const formattedImages = images.map(image => ({ uri: image }));

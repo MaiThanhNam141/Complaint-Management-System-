@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ToastAndroid, Share, Alert, SafeAreaView, View, TextInput, FlatList, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Modal } from 'react-native';
+import { ToastAndroid, Share, Alert, ImageBackground, View, TextInput, FlatList, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Modal } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import firestore from '@react-native-firebase/firestore';
 import { getCurrentUser, updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
@@ -61,7 +61,7 @@ const SearchScreen = () => {
                 updateLikesArticle(post.id.toString(), post.likes - 1);
             }
             else {
-                setIsLiked((prev) =>  [...prev, post.id]);
+                setIsLiked((prev) => [...prev, post.id]);
                 const updatedPost = { ...post, likes: post.likes + 1 };
                 const updatedPosts = titleResults.map((p) => (p.id === post.id ? updatedPost : p));
                 setTitleResults(updatedPosts);
@@ -88,7 +88,7 @@ const SearchScreen = () => {
                 .get();
 
             const titleResults = titleSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-            setTitleResults(titleResults);        
+            setTitleResults(titleResults);
         } catch (error) {
             console.error(error);
         } finally {
@@ -116,7 +116,7 @@ const SearchScreen = () => {
             console.error('Error sharing', error);
         }
     };
-    
+
     const getStatusText = useCallback((status) => {
         switch (status) {
             case 'Chưa duyệt':
@@ -146,9 +146,9 @@ const SearchScreen = () => {
         setSelectedPost(post);
         setCommentModal(true);
     }
-    const onSubmitComment =  async (post) => {
+    const onSubmitComment = async (post) => {
         console.log(post);
-        
+
     }
 
     const renderResultItem = ({ item }) => (
@@ -172,7 +172,7 @@ const SearchScreen = () => {
                     </TouchableOpacity>
                 </View>
             )}
-           <TouchableOpacity style={styles.postStats} onPress={() => handleDetailsPress(item)}>
+            <TouchableOpacity style={styles.postStats} onPress={() => handleDetailsPress(item)}>
                 <Text style={styles.likes}>{item?.likes} likes</Text>
                 {getStatusText(item?.status)}
             </TouchableOpacity>
@@ -208,7 +208,7 @@ const SearchScreen = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <View style={styles.searchBar}>
                 <MaterialIcons name="search" size={24} color="#000" />
                 <TextInput
@@ -228,7 +228,7 @@ const SearchScreen = () => {
                 loading ? <ActivityIndicator size={'large'} /> : renderIndependentResults()
             }
 
-        </SafeAreaView>
+        </ImageBackground>
     );
 };
 

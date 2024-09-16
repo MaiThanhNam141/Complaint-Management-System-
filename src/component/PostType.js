@@ -199,8 +199,8 @@ const PostType = ({ route, navigation }) => {
         }
     };
     const memoizedPosts = useMemo(() => {
-        return posts.map(post => (
-            <View key={post?.id} style={styles.postContainer}>
+        return posts.map((post, index) => (
+            <View key={`${post?.id}-${index}`} style={styles.postContainer}>
                 <TouchableOpacity onPress={() => handleDetailsPress(post)}>
                     <View style={styles.postHeader}>
                         <Text style={{ fontWeight: 'bold' }}>{post?.displayName}</Text>
@@ -277,7 +277,7 @@ const PostType = ({ route, navigation }) => {
                 <PostDetailsModal post={selectedPost} modalVisible={modalVisible} onClose={onCloseModal} />
             </Modal>
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
-                <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} user={user} />
+                <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} />
             </Modal>
         </SafeAreaView>
     );
@@ -293,26 +293,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 10,
         paddingTop: 10,
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    searchInput: {
-        flex: 1,
-        marginLeft: 10,
-        fontSize: 16,
-        paddingVertical: 5
     },
     statusBar: {
         flexDirection: 'row',

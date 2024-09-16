@@ -11,7 +11,7 @@ const HomeScreen = ({navigation}) => {
         [
             {id: 1, name: 'Giao thông', type: 'Giao thông', image: require('../../assets/Giaothong.png')},
             {id: 2, name: 'Môi trường', type: 'Môi trường', image: require('../../assets/Moitruong.png')},
-            {id: 3, name: 'Nguồn nước', type: 'Cấp - Thoát nước', image: require('../../assets/CapThoatnuoc.png')},
+            {id: 3, name: 'Cấp - Thoát nước', type: 'Cấp - Thoát nước', image: require('../../assets/CapThoatnuoc.png')},
             {id: 4, name: 'Chiếu sáng', type: 'Chiếu sáng', image: require('../../assets/Chieusang.png')},
             {id: 5, name: 'Trật tự đô thị', type: 'Trật tự đô thị', image: require('../../assets/TrattuXH.png')},
             {id: 6, name: 'Điện lực', type: 'Điện lực', image: require('../../assets/Dienluc.png')},
@@ -34,6 +34,7 @@ const HomeScreen = ({navigation}) => {
             <View style={styles.banner}>
                 <Image style={styles.logoImg} source={require("../../assets/anhbia.jpg")}/>
             </View>
+            <Text style={{color:'#49688d', fontWeight:'700', alignSelf:'center', marginVertical:10, fontSize:18}}>Hệ thống tiếp nhận các lĩnh vực</Text>
             <TouchableOpacity onPress={() => setModalNotificationVisible(true)} style={styles.bell}>
                 <MaterialIcons name="notifications-active" size={32} color="#fff" />
             </TouchableOpacity>
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
         resizeMode:'contain'
     },
     typeItemText: {
-        fontSize: 20,
+        fontSize: 15,
         textAlign:'center'
     },
     renderList: {

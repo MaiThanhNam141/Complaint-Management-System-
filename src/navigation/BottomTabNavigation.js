@@ -4,6 +4,7 @@ import { MainStackNavigator, ProfileStackNavigator, SearchStackNavigator, AddRep
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { UserContext } from '../context/UserContext';
 import { View, Keyboard } from 'react-native';
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
 
@@ -30,10 +31,18 @@ const BottomTabNavigation = () => {
     return null
   }
 
+  const getTabBarStyle = (route) => {
+    const routeName = getFocusedRouteNameFromRoute(route) ?? "";
+    if (routeName.toLowerCase() === "adminpanel") {
+      return { display: "none" };
+    }
+    return {};
+  };
+
   return (
     <Tab.Navigator
       initialRouteName={'Home'}
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
         tabBarActiveTintColor: "#3669a4",
@@ -42,9 +51,10 @@ const BottomTabNavigation = () => {
         tabBarStyle: {
           backgroundColor: "#fff",
           overflow: "visible",
-          height:50
+          height:50,
+          ...getTabBarStyle(route)
         }
-      }}
+      })}
     >
       <Tab.Screen name='Trang chủ' component={MainStackNavigator}
         options={{

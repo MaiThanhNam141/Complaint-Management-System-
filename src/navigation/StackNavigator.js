@@ -11,6 +11,9 @@ import PostDetailsModal from "../component/PostDetailsModal";
 import CalendarSchedule from "../screen/CalendarSchedule";
 import Comment from "../component/Comment";
 import About from "../component/About";
+import LikedPost from "../component/LikedPost";
+import PostUpload from "../component/PostUpload";
+import AdminPanel from "../component/AdminPanel";
 
 const Stack = createStackNavigator()
 
@@ -52,6 +55,11 @@ const ProfileStackNavigator = () =>{
                 <Stack.Screen name="loginscreen" component={LoginScreen} />
             )}
             <Stack.Screen name="about" component={About} />
+            <Stack.Screen name="postdetail" component={PostDetailsModal}/>
+            <Stack.Screen name="comment" component={Comment}/>
+            <Stack.Screen name="postlikes" component={LikedPost} />
+            <Stack.Screen name="postupload" component={PostUpload} />
+            <Stack.Screen name="adminpanel" component={AdminPanel} />
         </Stack.Navigator>
     )
 }

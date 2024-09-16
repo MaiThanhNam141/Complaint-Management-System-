@@ -7,10 +7,11 @@ import storage from '@react-native-firebase/storage'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import About from '../component/About';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({navigation}) => {
     const [loading, setLoading] = useState(false);
     const [userInfo, setUserInfo] = useState({});
     const [refresh, setRefresh] = useState(true);
+    const [isLiked, setIsLiked] = useState([])
     const [newInfo, setNewInfo] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [showModalName, setShowModalName] = useState(false);
@@ -22,7 +23,8 @@ const ProfileScreen = () => {
             try {
                 const user = await getUserInfo();
                 if (user) {
-                    setUserInfo(user)
+                    setUserInfo(user);
+                    setIsLiked(user?.likes)
                 }
                 else {
                     const auth = getCurrentUser();
@@ -176,8 +178,8 @@ const ProfileScreen = () => {
         }
     }
 
-    const handleLikeArticles = (id) => {
-        console.log("handlelike");
+    const handleLikeArticles = () => {
+        navigation.navigate('postlikes', {likes: isLiked, userData: userInfo});
     }
 
     const handleUploadArticles = () => {
@@ -264,7 +266,7 @@ const ProfileScreen = () => {
                     <Text style={styles.signOutText}>Giới thiệu về CityFix!</Text>
                 </TouchableOpacity>
                 {userInfo.email === 'toikhongphailaadmin@gmail.com' && (
-                    <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.signOutContainer}>
+                    <TouchableOpacity onPress={() => navigation.navigate('adminpanel')} style={styles.signOutContainer}>
                         <MaterialIcons name={"supervisor-account"} size={30} color={"#49688d"} />
                         <Text style={styles.signOutText}>Công cụ của Admin</Text>
                     </TouchableOpacity>

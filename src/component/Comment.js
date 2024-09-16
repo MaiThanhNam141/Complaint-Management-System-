@@ -4,7 +4,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { getCurrentUser, getUserRef } from '../context/FirestoreFunction';
 import firestore from '@react-native-firebase/firestore';
 
-const Comment = ({ post, onClose, onLogin, user }) => {
+const Comment = ({ post, onClose, onLogin }) => {
     const [commentInput, setCommentInput] = useState('');
     const [comment, setComment] = useState(post.comments);
     const userRef = getUserRef();
