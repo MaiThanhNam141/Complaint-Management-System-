@@ -12,9 +12,8 @@ const ProfileScreen = ({navigation}) => {
     const [userInfo, setUserInfo] = useState({});
     const [refresh, setRefresh] = useState(true);
     const [isLiked, setIsLiked] = useState([])
-    const [newInfo, setNewInfo] = useState('');
+    const [postsUpload, setPostsUpload] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
-    const [showModalName, setShowModalName] = useState(false);
     const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/disastermanagerment-b0a31.appspot.com/o/users%2Fdefault.png?alt=media&token=5b09c058-8392-424b-bb97-177a4b2c5e76';
 
     useEffect(() => {
@@ -24,7 +23,8 @@ const ProfileScreen = ({navigation}) => {
                 const user = await getUserInfo();
                 if (user) {
                     setUserInfo(user);
-                    setIsLiked(user?.likes)
+                    setIsLiked(user?.likes);
+                    setPostsUpload(user?.postsUpload);
                 }
                 else {
                     const auth = getCurrentUser();
@@ -82,20 +82,6 @@ const ProfileScreen = ({navigation}) => {
         }
         finally {
             setLoading(false);
-        }
-    }
-
-    const saveNewInfo = () => {
-        setShowModalName(false);
-        try {
-            const name = newInfo.trim();
-            if (name.length > 5)
-                updateUserInfo({ displayName: name });
-            setNewInfo('');
-            setRefresh(true);
-        } catch (error) {
-            console.error("Save new Info error: ", error);
-            ToastAndroid.show("Cập nhật thất bại", ToastAndroid.SHORT);
         }
     }
 
@@ -183,13 +169,13 @@ const ProfileScreen = ({navigation}) => {
     }
 
     const handleUploadArticles = () => {
-        console.log("handleLikeArticles");
+        navigation.navigate("postupload", {postsUpload: postsUpload});
     }
 
     const handleResetPassword = async () => {
         setLoading(true);
         try {
-            await auth().sendPasswordResetEmail(e);
+            await auth().sendPasswordResetEmail(userInfo.email);
             ToastAndroid.show(`Đã gửi yêu cầu đổi mật khẩu đến email đăng ký!`, ToastAndroid.SHORT);
         } catch (error) {
             ToastAndroid.show(`Thất bại. Hãy kiểm tra lại Internet`, ToastAndroid.SHORT);
@@ -206,30 +192,6 @@ const ProfileScreen = ({navigation}) => {
 
     return (
         <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
-            <Modal transparent={true} animationType={'slide'} visible={showModalName} onRequestClose={() => setShowModalName(!showModalName)}>
-                <View style={styles.alertContainer}>
-                    <View style={styles.alertBox}>
-                        <Text style={styles.alertText}>Sửa tên hiển thị</Text>
-                        <TextInput
-                            value={newInfo}
-                            onChangeText={(text) => setNewInfo(text)}
-                            placeholderTextColor={"gray"}
-                            style={styles.textInput}
-                            spellCheck={false}
-                            autoCorrect={false}
-                        >
-                        </TextInput>
-                        <View style={styles.alertButtons}>
-                            <TouchableOpacity onPress={() => setShowModalName(false)} style={[styles.buttonContainer, { backgroundColor: '#fff' }]}>
-                                <Text style={[styles.confirmButtonText, { color: 'black' }]}>Hủy</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => saveNewInfo()} style={styles.buttonContainer}>
-                                <Text style={styles.confirmButtonText}>Đồng ý</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
             <Modal animationType={'fade'} visible={modalVisible} onRequestClose={() => setModalVisible(false)} >
                 <About />
             </Modal>
@@ -387,9 +349,10 @@ const styles = StyleSheet.create({
     },
     signOutContainer: {
         flexDirection: 'row',
-        marginVertical: 10,
+        width:'95%',
+        paddingVertical: 10,
         marginHorizontal: 10,
-        alignItems: 'center'
+        alignItems: 'center',
     },
     signOutText: {
         color: 'black',

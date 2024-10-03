@@ -1,13 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Text, View, StyleSheet, TextInput, Image, ImageBackground, ToastAndroid, TouchableOpacity, PermissionsAndroid, Alert, Modal, Button, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { Alert, Text, View, StyleSheet, TextInput, Image, ImageBackground, ToastAndroid, TouchableOpacity, PermissionsAndroid, Modal, Button, ActivityIndicator } from 'react-native';
 import { getUserInfo } from '../context/FirestoreFunction';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImagePicker from 'react-native-image-crop-picker';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import SubmitReportDetail from '../component/SubmitReportDetail';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage'
+import { UserContext } from '../context/UserContext';
 
 const Report = () => {
     const [user, setUser] = useState('');
@@ -18,22 +19,33 @@ const Report = () => {
     const [isMapVisible, setIsMapVisible] = useState(false);
     const [isDetailVisible, setIsDetailVisible] = useState(false);
     const [loading, setLoading] = useState(false);
-    const mapRef = useRef(null);
     const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/disastermanagerment-b0a31.appspot.com/o/users%2Fdefault.png?alt=media&token=5b09c058-8392-424b-bb97-177a4b2c5e76';
     const [detailData, setDetailData] = useState("");
 
+    const { userExist } = useContext( UserContext )
+
     useEffect(() => {
+        // Hàm lấy thông tin người dùng hiện tại để thay thế vào đăng báo cáo
         const fetchUserInfo = async () => {
             try {
                 const user = await getUserInfo();
                 if (user) {
                     setUser(user);
+                } else {
+                    Alert.alert(
+                        'Thông báo',
+                        'Bạn cần đăng nhập để sử dụng tính năng này này',
+                        [
+                            { text: 'Đăng nhập', onPress: handleLogin },
+                            { text: 'Hủy', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
+                        ]
+                    );
                 }
             } catch (error) {
                 ToastAndroid.show("Không thể lấy dữ liệu người dùng. Hãy kiểm tra lại internet", ToastAndroid.SHORT);
             }
         };
-
+        // Hàm yêu cầu quyền truy cập vị trí
         const requestLocationPermission = async () => {
             try {
                 const granted = await PermissionsAndroid.request(
@@ -49,11 +61,22 @@ const Report = () => {
             }
         };
 
+        // Thực hiện đồng thời hai hàm trên mỗi khi truy cập vào màn hình này
+        // để đảm bảo luôn có thông tin người dùng và vị trí
+        // hàm này sẽ được gọi lại mỗi khi đăng nhập/đăng xuất khỏi app
+
         Promise.all([fetchUserInfo(), requestLocationPermission()])
             .catch((error) => {
                 console.error("Có lỗi xảy ra khi thực hiện 2 hàm", error);
             });
-    }, []);
+    }, [userExist]);
+
+    // Hàm này chuyển đến screen login
+    const handleLogin = () => {
+        navigation.jumpTo('Hồ sơ')
+    }
+
+    // Hàm lấy vị trí hiện tại và dùng vị trí hiện tại để làm điểm neo cho google map
 
     const getCurrentLocation = () => {
         Geolocation.getCurrentPosition(
@@ -76,6 +99,7 @@ const Report = () => {
         );
     };
 
+    // Hàm hiển thị bản đồ khi nhấn vào nút vị trí
     const handleMapPress = async () => {
         try {
             const granted = await PermissionsAndroid.check(
@@ -93,15 +117,17 @@ const Report = () => {
         }
     };
 
+    // Hàm xử lý hành động chọn vị trí trên bản đồ
     const handleMapPressOnMap = (event) => {
         const { latitude, longitude } = event.nativeEvent.coordinate;
         setSelectedLocation({ latitude, longitude });
         ToastAndroid.show(`Vị trí đã chọn: ${latitude}, ${longitude}`, ToastAndroid.SHORT);
     };
 
+    // Hàm menu cho phép người dùng tải ảnh báo cáo lên
     const handleUpload = () => {
         Alert.alert(
-            'Đổi Avartar',
+            'Tải ảnh lên',
             'Chụp ảnh hay lấy dùng hình ảnh có sẵn trong thư viện?',
             [
                 { text: 'Chụp ảnh', onPress: takePhotoFromCamera },
@@ -111,6 +137,12 @@ const Report = () => {
             { cancelable: true }
         );
     };
+
+    // Hàm chụp ảnh từ camera
+    // Hình ảnh được chọn sẽ được cắt hình để phù hợp với kích thước ảnh trong ứng dụng là 250x250
+    // Hàm này sẽ được gọi khi người dùng chọn "Chụp ảnh" trong hàm menu tải ảnh lên
+    // Sau khi chọn ảnh, ảnh sẽ được thêm vào mảng reportImage
+    // Nếu người dùng chọn nhiều ảnh hơn 3 ảnh, sẽ hiện thông báo tối đa 3 ảnh
 
     const takePhotoFromCamera = async () => {
         try {
@@ -146,11 +178,19 @@ const Report = () => {
         }
     };
 
+    // Hàm tải ảnh từ thư viện
+    // Hàm này sẽ được gọi khi người dùng chọn "thư viện" trong hàm menu tải ảnh lên
+    // Cho phép người dùng chọn nhiều ảnh nhưng tối đa là 3 ảnh
+    // Sau khi chọn ảnh, ảnh sẽ được thêm vào mảng reportImage
+    // Nếu người dùng chọn nhiều ảnh hơn 3 ảnh, sẽ hiện thông báo tối đa 3 ảnh
+    // Nếu người dùng chọn ảnh nhưng không có quyền truy cập vào thư viện ảnh, sẽ hiện thông báo lỗi
+    // Hình ảnh được chọn sẽ được cắt hình để phù hợp với kích thước ảnh trong ứng dụng là 250x250
+
     const uploadImageFromLibrary = () => {
         try {
             ImagePicker.openPicker({
-                width: 100,
-                height: 100,
+                width: 250,
+                height: 250,
                 cropping: true,
                 multiple: true,
             }).then(images => {
@@ -171,12 +211,14 @@ const Report = () => {
         }
     }
 
+    // Hàm xóa ảnh đã tải lên
     const handleDeleteImage = (index) => {
         const newReportImage = [...reportImage];
         newReportImage.splice(index, 1);
         setReportImage(newReportImage);
     };
 
+    // Hàm xử lý kết quả từ Chi tiết
     const handleResult = (result) => {
         const formattedResult = {
             address: `${result.newAddress}, ${result.ward}, ${result.district}`,
@@ -187,6 +229,10 @@ const Report = () => {
         handleSubmit()
     };
 
+    // Hàm lưu ảnh báo cáo lên Firebase Storage
+    // Ảnh sẽ được lưu vào thư mục có tên là ID của bài cáo và nằm bên trong thư mục 
+    // reportAssets trong Firebase Storage
+    // Mỗi ảnh sẽ được đặt tên bắt đầu từ số 1 và tăng dần lên
     const saveImageCloudStorage = async (newId) => {
         try {
             const storageRef = storage().ref();
@@ -208,6 +254,9 @@ const Report = () => {
         }
     };
 
+    // Hàm gửi báo cáo lên collection articles Firebase Cloud Firestore
+    // Hàm sẽ đọc dữ liệu trong collection counters để lấy ID mới nhất
+
     const handleSubmit = async () => {
         try {
             setLoading(true);
@@ -222,6 +271,10 @@ const Report = () => {
             const newId = currentId + 1;
             const imageURLs = await saveImageCloudStorage(newId);
 
+            // Nếu người dùng chưa chọn vị trí trên bản đồ thì hệ thống sẽ 
+            // mặc định lấy vị trí là vị trí hiện tại của người đăng báo cáo
+            // Nếu vị trí hiện tại không thể truy cập được do chưa cấp quyền, không có internet
+            // hoặc 1 nguyên nhân khác thì sẽ mặc định lấy vị trí của "Tòa nhà Trung tâm Hành chính Bình Dương"
             const locationData = selectedLocation ? {
                 latitude: selectedLocation.latitude,
                 longitude: selectedLocation.longitude,
@@ -230,7 +283,8 @@ const Report = () => {
                 longitude: location?.longitude || 106.68220577854719,
             };
 
-            const reportDateString = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+             // Ngày báo cáo sẽ được định dạnh thành 'YYYY-MM-DD'
+            const reportDateString = new Date().toISOString().split('T')[0];
 
             const articleData = {
                 ...detailData,
@@ -239,10 +293,14 @@ const Report = () => {
                 status: "Chưa duyệt",
                 location: new firestore.GeoPoint(locationData.latitude, locationData.longitude),
                 id: newId,
-                displayName: user.displayName,
+                displayName: user?.displayName,
                 reportDate: reportDateString,
                 likes: 0,
                 comments: [],
+                responseDate: '',
+                responseDesc: '',
+                responseUnit: '',
+                Severity: "Nhẹ",
             };
             const newArticleRef = articlesRef.doc(newId.toString());
             Promise.all([newArticleRef.set(articleData), countersRef.update({ articlesId: newId })])
@@ -301,7 +359,6 @@ const Report = () => {
                     onRequestClose={() => setIsMapVisible(false)} // Đóng Modal khi bấm nút back
                 >
                     <MapView
-                        // ref={mapRef}
                         provider={MapView.PROVIDER_GOOGLE}
                         showsUserLocation={true}
                         showsMyLocationButton={true}

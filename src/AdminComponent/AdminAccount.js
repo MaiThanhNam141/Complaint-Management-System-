@@ -1,11 +1,11 @@
 import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, ImageBackground } from 'react-native';
 
 const AdminAccount = () => {
     return (
-        <View style={styles.container}>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <Text>AdminAccout</Text>
-        </View>
+        </ImageBackground>
     );
 };
 

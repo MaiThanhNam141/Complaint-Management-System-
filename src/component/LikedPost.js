@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Modal, ToastAndroid, Share, Text, View, StyleSheet, SafeAreaView, RefreshControl, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Modal, ToastAndroid, Share, Text, View, StyleSheet, ImageBackground, RefreshControl, ScrollView, TouchableOpacity, Image } from 'react-native';
 import SkeletonPost from './SkeletonPost';
 import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -8,8 +8,8 @@ import PostDetailsModal from './PostDetailsModal';
 import { updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
 import Comment from './Comment';
 
-const LikedPost = ({route, navigation}) => {
-    const [user, setuser] = useState(route.params.userData);
+const LikedPost = ({ route, navigation }) => {
+    const user = route.params.userData;
     const [refreshing, setRefreshing] = useState(true);
     const [visible, setVisible] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -21,11 +21,9 @@ const LikedPost = ({route, navigation}) => {
     const [loading, setLoading] = useState(false);
     const [lastDoc, setLastDoc] = useState(null);
     const [initialLoading, setInitialLoading] = useState(true);
-    const [isLiked, setIsLiked] = useState(route.params.likes);
+    const [isLiked, setIsLiked] = useState(route.params?.likes || []);
 
-    console.log(user);
-    console.log(isLiked);
-    
+
     const onRefresh = () => {
         setInitialLoading(true);
         setRefreshing(true);
@@ -44,7 +42,6 @@ const LikedPost = ({route, navigation}) => {
 
     const handleLike = (post) => {
         try {
-            
             if (isLiked.includes(post.id)) {
                 setIsLiked(isLiked.filter((id) => id !== post.id));
                 const updatedPost = { ...post, likes: post.likes - 1 };
@@ -69,7 +66,6 @@ const LikedPost = ({route, navigation}) => {
 
     useEffect(() => {
         if (refreshing) {
-            setPosts([]);
             fetchPosts();
         }
     }, [refreshing]);
@@ -223,10 +219,18 @@ const LikedPost = ({route, navigation}) => {
                 <SkeletonPost />
             </ScrollView>
         )
+    } else if (isLiked.length === 0) {
+        return (
+            <ImageBackground style={[styles.container, { justifyContent:'center' }]} source={require("../../assets/background.png")}>
+                <Text style={{ fontSize: 18, textAlign: 'center', padding: 20, }}>
+                    Bạn chưa like bất kỳ bài viết nào
+                </Text>
+            </ImageBackground>
+        );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <ScrollView
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 onScrollEndDrag={handleScroll}
@@ -247,7 +251,7 @@ const LikedPost = ({route, navigation}) => {
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
                 <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} user={user} />
             </Modal>
-        </SafeAreaView>
+        </ImageBackground>
     );
 };
 

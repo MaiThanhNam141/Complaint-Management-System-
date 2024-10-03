@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Modal, ToastAndroid, Alert, Share, Text, View, StyleSheet, SafeAreaView, RefreshControl, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Modal, ToastAndroid, Alert, Share, Text, View, StyleSheet, ImageBackground, RefreshControl, ScrollView, TouchableOpacity, Image } from 'react-native';
 import SkeletonPost from './SkeletonPost';
 import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -78,7 +78,6 @@ const PostType = ({ route, navigation }) => {
 
     useEffect(() => {
         if (refreshing) {
-            setPosts([])
             Promise.all([
                 isArticleLiked(),
                 fetchPosts()],
@@ -254,7 +253,7 @@ const PostType = ({ route, navigation }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <ScrollView
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 onScrollEndDrag={handleScroll}
@@ -279,7 +278,7 @@ const PostType = ({ route, navigation }) => {
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
                 <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} />
             </Modal>
-        </SafeAreaView>
+        </ImageBackground>
     );
 };
 

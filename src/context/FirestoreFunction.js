@@ -14,6 +14,7 @@ export const getUserInfo = async () => {
         }
     } catch (error) {
         console.error("Firebase getUserInfo: ", error);
+        return null;
     }
 }
 export const getUserRef = () => {

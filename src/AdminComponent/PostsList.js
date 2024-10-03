@@ -1,9 +1,10 @@
 import React, { memo, useMemo, useCallback, useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Image, SafeAreaView, StyleSheet, Modal } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, Image, ImageBackground, StyleSheet, Modal, ToastAndroid } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImageViewing from 'react-native-image-viewing';
 import Comment from '../component/Comment';
 import ReposnsePost from './ReposnsePost';
+import firestore from '@react-native-firebase/firestore';
 
 const PostsList = memo(({ posts, status }) => {
     const [modalVisible, setModalVisible] = useState(false);
@@ -65,10 +66,30 @@ const PostsList = memo(({ posts, status }) => {
         console.log("Hello");
     };
 
-    const handleSave = async() => {
-        console.log("handleSave");
-        
-    };
+    const handleSave = async (post) => {
+        try {
+            await firestore()
+                .collection('articles')
+                .doc(post.id.toString())
+                .update({
+                    responseDate: post?.responseDate || "Lỗi",
+                    responseDesc: post?.responseDesc || "",
+                    responseUnit: post?.responseUnit || "",
+                    status: post?.status || "Chưa duyệt",
+                    Severity: post?.Severity || "Nhẹ",
+                })
+                .then(() => {
+                    ToastAndroid.show("Thành công", ToastAndroid.SHORT);
+                })
+                .catch((error) => {
+                    console.log(error);
+                })
+        } catch (error) {
+            console.error("handleSave Error:  ", error);
+
+        }
+    }
+
 
     const memoizedPosts = useMemo(() => {
         return posts
@@ -98,7 +119,7 @@ const PostsList = memo(({ posts, status }) => {
                         <Text style={styles.likes}>{post?.likes} likes</Text>
                         {getStatusText(post?.status)}
                     </TouchableOpacity>
-    
+
                     <View style={styles.postActions}>
                         <TouchableOpacity style={styles.actionButton} onPress={() => handleCommentModal(post)}>
                             <MaterialIcons name="comment" size={20} color="#000" />
@@ -112,10 +133,10 @@ const PostsList = memo(({ posts, status }) => {
                 </View>
             ));
     }, [posts, status]);
-    
+
 
     return (
-        <SafeAreaView style={styles.container}>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {memoizedPosts}
             </ScrollView>
@@ -131,7 +152,7 @@ const PostsList = memo(({ posts, status }) => {
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
                 <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} />
             </Modal>
-        </SafeAreaView>
+        </ImageBackground>
     );
 });
 

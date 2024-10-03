@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TextInput, Linking, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, SafeAreaView } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -8,11 +8,9 @@ const ResponsePost = ({ post, onClose, onSave }) => {
   const [visible, setVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [images, setImages] = useState([]);
-  const [severity, setSeverity] = useState(post?.Severity); 
+  const [severity, setSeverity] = useState(post?.Severity);
   const [responseDesc, setResponseDesc] = useState(post?.responseDesc);
   const [responseUnit, setResponseUnit] = useState(post?.responseUnit);
-  
-  // New state for status
   const [status, setStatus] = useState(post?.status || "Chưa duyệt");
 
   const handleImagePress = (imageIndex, images) => {
@@ -43,6 +41,13 @@ const ResponsePost = ({ post, onClose, onSave }) => {
     }
   };
 
+  const savePost = () => {
+    const reportDateString = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+    post.responseDate = reportDateString;
+    onSave(post);
+    onClose();
+  }
+
   const memoizedPosts = useMemo(() => {
     return (
       <View style={{ flex: 1, marginVertical: 15 }}>
@@ -55,40 +60,40 @@ const ResponsePost = ({ post, onClose, onSave }) => {
         <Text style={styles.adminInfoText}>Loại: {post?.type || 'Chưa có thông tin'}</Text>
         <Text style={styles.adminInfoText}>Địa chỉ: {post?.address || 'Chưa có thông tin'}</Text>
         <Text style={styles.adminInfoText}>Vị trí: {post?.location ? '' : "Chưa có thông tin"}
-              {post?.location && (
-                <TouchableOpacity onPress={() => openGoogleMaps(post?.location?._latitude, post?.location?._longitude)}>
-                  <MaterialIcons name="location-on" color="gray" size={24} />
-                </TouchableOpacity>
-              )}
-            </Text>
-          {post?.reportImage && (
-            <View>
-              <View style={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
-                <Text style={{ fontSize: 16, color: 'white' }}>
-                  1/{post?.reportImage?.length}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => handleImagePress(0, post?.reportImage)}>
-                <Image source={{ uri: post?.reportImage[0] }} style={styles.postImage} />
-              </TouchableOpacity>
-            </View>
+          {post?.location && (
+            <TouchableOpacity onPress={() => openGoogleMaps(post?.location?._latitude, post?.location?._longitude)}>
+              <MaterialIcons name="location-on" color="gray" size={24} />
+            </TouchableOpacity>
           )}
-          <View style={styles.postStats}>
-            <Text style={styles.likes}>{post?.likes || 0} likes</Text>
-            <Picker
-              selectedValue={status}
-              onValueChange={(itemValue) => setStatus(itemValue)}
-              style={{ width: 200 }}
-            >
-              <Picker.Item label="Chưa duyệt" value="Chưa duyệt" />
-              <Picker.Item label="Đang kiểm tra" value="Đang kiểm tra" />
-              <Picker.Item label="Chờ xử lí" value="Chờ xử lí" />
-              <Picker.Item label="Đang xử lí" value="Đang xử lí" />
-              <Picker.Item label="Đã hoàn thành" value="Đã hoàn thành" />
-              <Picker.Item label="Từ chối" value="Từ chối" />
-            </Picker>
+        </Text>
+        {post?.reportImage && (
+          <View>
+            <View style={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
+              <Text style={{ fontSize: 16, color: 'white' }}>
+                1/{post?.reportImage?.length}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => handleImagePress(0, post?.reportImage)}>
+              <Image source={{ uri: post?.reportImage[0] }} style={styles.postImage} />
+            </TouchableOpacity>
           </View>
-          <View style={styles.adminInfoWrapper}>
+        )}
+        <View style={styles.postStats}>
+          <Text style={styles.likes}>{post?.likes || 0} likes</Text>
+          <Picker
+            selectedValue={status}
+            onValueChange={(itemValue) => setStatus(itemValue)}
+            style={{ width: 200 }}
+          >
+            <Picker.Item label="Chưa duyệt" value="Chưa duyệt" />
+            <Picker.Item label="Đang kiểm tra" value="Đang kiểm tra" />
+            <Picker.Item label="Chờ xử lí" value="Chờ xử lí" />
+            <Picker.Item label="Đang xử lí" value="Đang xử lí" />
+            <Picker.Item label="Đã hoàn thành" value="Đã hoàn thành" />
+            <Picker.Item label="Từ chối" value="Từ chối" />
+          </Picker>
+        </View>
+        <View style={styles.adminInfoWrapper}>
           <Text style={styles.adminInfoText}>Mức độ nghiêm trọng:</Text>
           <Picker
             selectedValue={severity}
@@ -121,10 +126,10 @@ const ResponsePost = ({ post, onClose, onSave }) => {
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.postContainer}>
         {memoizedPosts}
-        <TouchableOpacity style={styles.closeButton} onPress={() => onSave({ ...post, status, severity })}>
+        <TouchableOpacity style={styles.closeButton} onPress={savePost}>
           <Text style={styles.closeButtonText}>Lưu</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <TouchableOpacity style={[styles.closeButton, { marginBottom: 25 }]} onPress={onClose}>
           <Text style={styles.closeButtonText}>Đóng</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -163,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     padding: 10,
     borderRadius: 10,
-    marginVertical: 30,
+    marginVertical: 5,
     alignItems: 'center'
   },
   closeButtonText: {

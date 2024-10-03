@@ -78,9 +78,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   smallCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: "30%",
+    height: 35,
   },
 });
 
