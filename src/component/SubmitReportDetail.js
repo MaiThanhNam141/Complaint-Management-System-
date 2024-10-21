@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import province from "../context/BDProvince";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-const SubmitReportDetail = ({ onResult, onClose }) => {
-    const [districtSelected, setDistrictSelected] = useState('');
-    const [wardSelected, setWardSelected] = useState('');
-    const [address, setAddress] = useState('');
-    const [desc, setDesc] = useState('');
-    const [type, setType] = useState('');
+const SubmitReportDetail = ({ onResult, onClose, detailData }) => {
+    const [districtSelected, setDistrictSelected] = useState(detailData?.address?.split(', ')[2] || "");
+    const [wardSelected, setWardSelected] = useState(detailData?.address?.split(', ')[1] || "");
+    const [address, setAddress] = useState(detailData?.address || "");
+    const [desc, setDesc] = useState(detailData?.desc || "");
+    const [type, setType] = useState(detailData?.type || "");
 
     const data = [
         { id: 0, name: 'Khác' },
@@ -29,7 +30,7 @@ const SubmitReportDetail = ({ onResult, onClose }) => {
             desc === '' ||
             type === ''
         ) {
-            alert('Vui lòng nhập đầy đủ thông tin');
+            Alert.alert('Vui lòng nhập đầy đủ thông tin');
             return;
         }
         const result = { district: districtSelected, ward: wardSelected, newAddress, desc, type };
@@ -55,8 +56,14 @@ const SubmitReportDetail = ({ onResult, onClose }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Chi tiết báo cáo</Text>
+        <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+
+                <TouchableOpacity onPress={() => onClose()}>
+                    <MaterialIcons name={"arrow-back"} size={30} color={"#000"} />
+                </TouchableOpacity>
+                <Text style={styles.title}>Chi tiết báo cáo</Text>
+            </View>
 
             <Text style={styles.label}>Quận/Huyện:</Text>
             <Picker
@@ -78,13 +85,13 @@ const SubmitReportDetail = ({ onResult, onClose }) => {
             </Picker>
 
             <TextInput
-                style={styles.input}
+                style={[styles.input, { height: 60}]}
                 placeholder="Số nhà, tên đường,..."
                 value={address}
                 onChangeText={(text) => setAddress(text)}
             />
             <TextInput
-                style={styles.input}
+                style={[styles.input, { height: 110}]}
                 placeholder="Mô tả chi tiết sự cố"
                 value={desc}
                 onChangeText={(text) => setDesc(text)}
@@ -106,7 +113,7 @@ const SubmitReportDetail = ({ onResult, onClose }) => {
             <TouchableOpacity style={styles.button} onPress={handleResult}>
                 <Text style={styles.buttonText}>Lưu</Text>
             </TouchableOpacity>
-        </View>
+        </ImageBackground>
     );
 };
 
@@ -117,6 +124,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         backgroundColor: '#fff',
+        justifyContent:'space-between'
     },
     title: {
         fontSize: 24,
@@ -124,11 +132,12 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     input: {
-        height: 40,
         borderColor: '#ccc',
         borderWidth: 1,
         padding: 10,
-        marginBottom: 20,
+        marginBottom: 15,
+        borderRadius:10,
+        textAlignVertical:'top'
     },
     label: {
         fontSize: 16,
@@ -139,12 +148,15 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     button: {
-        backgroundColor: '#4CAF50',
-        padding: 10,
+        backgroundColor: '#3669a4',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
         borderRadius: 5,
+        alignItems: 'center',
     },
     buttonText: {
-        color: '#fff',
-        fontSize: 16,
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });

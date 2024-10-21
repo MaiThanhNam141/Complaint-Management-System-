@@ -6,7 +6,8 @@ import Comment from '../component/Comment';
 import ReposnsePost from './ReposnsePost';
 import firestore from '@react-native-firebase/firestore';
 
-const PostsList = memo(({ posts, status }) => {
+const PostsList = memo(({ posts, status, updatePosts }) => {
+    const noImageAvailable = require('../../assets/noImage.jpg');
     const [modalVisible, setModalVisible] = useState(false);
     const [commentModal, setCommentModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
@@ -71,13 +72,7 @@ const PostsList = memo(({ posts, status }) => {
             await firestore()
                 .collection('articles')
                 .doc(post.id.toString())
-                .update({
-                    responseDate: post?.responseDate || "Lỗi",
-                    responseDesc: post?.responseDesc || "",
-                    responseUnit: post?.responseUnit || "",
-                    status: post?.status || "Chưa duyệt",
-                    Severity: post?.Severity || "Nhẹ",
-                })
+                .update(post)
                 .then(() => {
                     ToastAndroid.show("Thành công", ToastAndroid.SHORT);
                 })
@@ -90,6 +85,10 @@ const PostsList = memo(({ posts, status }) => {
         }
     }
 
+    const handleDelete = (id) => {
+        const updatedPosts = posts.filter(post => post.id !== id);
+        updatePosts(updatedPosts);
+    }
 
     const memoizedPosts = useMemo(() => {
         return posts
@@ -103,7 +102,7 @@ const PostsList = memo(({ posts, status }) => {
                         </View>
                         <Text style={{ marginBottom: 10 }}>{post?.title}</Text>
                     </TouchableOpacity>
-                    {post?.reportImage && (
+                    {post?.reportImage && post?.reportImage.length > 0 ? (
                         <View>
                             <View style={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
                                 <Text style={{ fontSize: 16, color: 'white' }}>
@@ -114,7 +113,10 @@ const PostsList = memo(({ posts, status }) => {
                                 <Image source={{ uri: post?.reportImage[0] }} style={styles.postImage} />
                             </TouchableOpacity>
                         </View>
+                    ) : (
+                        <Image source={noImageAvailable} style={styles.postImage} />
                     )}
+
                     <TouchableOpacity style={styles.postStats} onPress={() => handleDetailsPress(post)}>
                         <Text style={styles.likes}>{post?.likes} likes</Text>
                         {getStatusText(post?.status)}
@@ -147,7 +149,7 @@ const PostsList = memo(({ posts, status }) => {
                 onRequestClose={handleImageViewingClose}
             />
             <Modal visible={modalVisible} animationType="slide" onRequestClose={onCloseModal}>
-                <ReposnsePost post={selectedPost} onClose={onCloseModal} onSave={handleSave} />
+                <ReposnsePost post={selectedPost} onClose={onCloseModal} onSave={handleSave} onSliceIdDeleted={handleDelete}/>
             </Modal>
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
                 <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} />
@@ -212,6 +214,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 200,
         borderRadius: 10,
+        resizeMode:'contain'
     },
     postActions: {
         flexDirection: 'row',

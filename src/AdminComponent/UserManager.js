@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Alert, Text, View, StyleSheet, Image, FlatList, TextInput, ImageBackground, ToastAndroid, TouchableOpacity } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import auth from '@react-native-firebase/auth';
 
 const UserManager = () => {
     const [users, setUsers] = useState([]);

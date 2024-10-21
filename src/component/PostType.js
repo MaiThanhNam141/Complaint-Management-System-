@@ -80,7 +80,7 @@ const PostType = ({ route, navigation }) => {
         if (refreshing) {
             Promise.all([
                 isArticleLiked(),
-                fetchPosts()],
+                fetchPosts()]
             ).then(() => {
                 setRefreshing(false);
                 setLoading(false);

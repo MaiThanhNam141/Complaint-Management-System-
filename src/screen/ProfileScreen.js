@@ -225,7 +225,7 @@ const ProfileScreen = ({navigation}) => {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.signOutContainer}>
                     <MaterialIcons name={"error"} size={30} color={"#49688d"} />
-                    <Text style={styles.signOutText}>Giới thiệu về CityFix!</Text>
+                    <Text style={styles.signOutText}>Giới thiệu về Quản lí sự cố!</Text>
                 </TouchableOpacity>
                 {userInfo.email === 'toikhongphailaadmin@gmail.com' && (
                     <TouchableOpacity onPress={() => navigation.navigate('adminpanel')} style={styles.signOutContainer}>

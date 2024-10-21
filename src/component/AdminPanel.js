@@ -1,7 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import CalendarManager from '../AdminComponent/CalendarManager';
 import ArticlesManager from '../AdminComponent/ArticlesManager';
 import UserManager from '../AdminComponent/UserManager';
 import AdminAccount from '../AdminComponent/AdminAccount';
@@ -29,12 +28,6 @@ const AdminPanel = () => {
             }}
         >
 
-            <Tab.Screen name="Quản lý lịch sửa" component={CalendarManager}
-                options={{
-                    tabBarIcon: ({ color }) => (
-                        <MaterialIcons name="calendar-month" size={25} color={color} />
-                    )
-                }} />
             <Tab.Screen name="Quản lý bài đăng" component={ArticlesManager}
                 options={{
                     tabBarIcon: ({ color }) => (

@@ -10,7 +10,7 @@ import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage'
 import { UserContext } from '../context/UserContext';
 
-const Report = () => {
+const Report = ({ navigation }) => {
     const [user, setUser] = useState('');
     const [reportInput, setReportInput] = useState('');
     const [reportImage, setReportImage] = useState([]);
@@ -22,7 +22,7 @@ const Report = () => {
     const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/disastermanagerment-b0a31.appspot.com/o/users%2Fdefault.png?alt=media&token=5b09c058-8392-424b-bb97-177a4b2c5e76';
     const [detailData, setDetailData] = useState("");
 
-    const { userExist } = useContext( UserContext )
+    const { userExist } = useContext(UserContext)
 
     useEffect(() => {
         // Hàm lấy thông tin người dùng hiện tại để thay thế vào đăng báo cáo
@@ -106,8 +106,6 @@ const Report = () => {
                 PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
             );
             if (granted) {
-                console.log(`${location.latitude}, ${location.longitude}`);
-
                 setIsMapVisible(true); // Hiển thị bản đồ dưới dạng Modal
             } else {
                 Alert.alert('Permission Denied', 'Location permission is required to show your current location on the map.');
@@ -225,8 +223,8 @@ const Report = () => {
             desc: result.desc,
             type: result.type,
         };
+        console.log(formattedResult);
         setDetailData(formattedResult);
-        handleSubmit()
     };
 
     // Hàm lưu ảnh báo cáo lên Firebase Storage
@@ -254,14 +252,34 @@ const Report = () => {
         }
     };
 
+    // Hàm xác nhận gửi báo cáo
+    const showConfirmAlert = () => {
+        Alert.alert(
+            'Xác nhận',
+            'Bạn có chắc chắn muốn gửi báo cáo này không?',
+            [
+                {
+                    text: 'Hủy',
+                    onPress: () => console.log('Hủy bỏ'),
+                    style: 'cancel',
+                },
+                {
+                    text: 'Đồng ý',
+                    onPress: handleSubmit,
+                },
+            ],
+            { cancelable: true }
+        );
+    };
+
     // Hàm gửi báo cáo lên collection articles Firebase Cloud Firestore
     // Hàm sẽ đọc dữ liệu trong collection counters để lấy ID mới nhất
 
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            if (!detailData.address || !detailData.desc || !detailData.type) {
-                ToastAndroid.show("Hãy bấm vào nút chi tiết để điền đầy đủ thông tin", ToastAndroid.SHORT)
+            if (!detailData.address || !detailData.desc || !detailData.type || !reportInput) {
+                ToastAndroid.show("Lỗi! Hãy điền đầy đủ thông tin", ToastAndroid.SHORT)
                 return;
             }
             const countersRef = firestore().collection('counters').doc('articlesCounter');
@@ -283,7 +301,7 @@ const Report = () => {
                 longitude: location?.longitude || 106.68220577854719,
             };
 
-             // Ngày báo cáo sẽ được định dạnh thành 'YYYY-MM-DD'
+            // Ngày báo cáo sẽ được định dạnh thành 'YYYY-MM-DD'
             const reportDateString = new Date().toISOString().split('T')[0];
 
             const articleData = {
@@ -304,6 +322,10 @@ const Report = () => {
             };
             const newArticleRef = articlesRef.doc(newId.toString());
             Promise.all([newArticleRef.set(articleData), countersRef.update({ articlesId: newId })])
+            setReportImage([]);
+            setReportInput("");
+            setDetailData("");
+            navigation.navigate('posttype', { type: detailData.type, name: detailData.type });
         } catch (error) {
             console.error(error)
         } finally {
@@ -326,7 +348,7 @@ const Report = () => {
                     multiline={true}
                 />
                 {reportImage.length > 0 && (
-                    <View style={{ flexWrap: 'wrap', flexDirection: 'row' }}>
+                    <View style={{ flexWrap: 'wrap', flexDirection: 'row', justifyContent:'space-between' }}>
                         {reportImage.map((imageUri, index) => (
                             <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Image source={{ uri: imageUri }} style={styles.image} />
@@ -342,14 +364,32 @@ const Report = () => {
                     <TouchableOpacity style={styles.utility} onPress={handleMapPress}>
                         <MaterialIcons name={"pin-drop"} size={20} color={"red"} style={styles.icon} />
                         <Text style={styles.utilityText}> Vị trí</Text>
+                        {
+                            selectedLocation && (
+                                <MaterialIcons name={"check"} size={20} color={"#4AEB0F"} />
+                            )
+
+                        }
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.utility} onPress={handleUpload}>
                         <MaterialIcons name={"image"} size={20} color={"blue"} style={styles.icon} />
                         <Text style={styles.utilityText}> Hình ảnh</Text>
+                        {
+                            reportImage && reportImage.length > 0 && (
+                                <MaterialIcons name={"check"} size={20} color={"#4AEB0F"} />
+                            )
+
+                        }
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.utility} onPress={() => setIsDetailVisible(true)}>
                         <MaterialIcons name={"info"} size={20} color={"black"} style={styles.icon} />
                         <Text style={styles.utilityText}> Chi tiết</Text>
+                        {
+                            detailData && (
+                                <MaterialIcons name={"check"} size={20} color={"#4AEB0F"} />
+                            )
+
+                        }
                     </TouchableOpacity>
                 </View>
 
@@ -378,7 +418,7 @@ const Report = () => {
                     <Button title="Xác nhận vị trí" onPress={() => setIsMapVisible(false)} />
                 </Modal>
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <TouchableOpacity style={styles.button} onPress={showConfirmAlert}>
                 {loading ? <ActivityIndicator size={'large'} /> : <Text style={styles.buttonText}>Đăng Báo Cáo</Text>}
             </TouchableOpacity>
             <Modal
@@ -386,7 +426,7 @@ const Report = () => {
                 animationType="slide"
                 onRequestClose={() => setIsDetailVisible(false)}
             >
-                <SubmitReportDetail onResult={handleResult} onClose={() => setIsDetailVisible(false)} />
+                <SubmitReportDetail onResult={handleResult} onClose={() => setIsDetailVisible(false)} detailData={detailData} />
             </Modal>
         </ImageBackground>
     );
@@ -434,8 +474,8 @@ const styles = StyleSheet.create({
     image: {
         width: 100,
         height: 100,
-        marginRight: 10,
-        marginBottom: 10,
+        borderRadius:5,
+        resizeMode:'contain'
     },
     utilities: {
         flexDirection: 'column',
@@ -448,7 +488,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
     },
     utilityText: {
-        marginLeft: 5,
+        marginHorizontal: 5,
         fontSize: 14,
     },
     map: {

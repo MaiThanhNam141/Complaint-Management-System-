@@ -106,6 +106,7 @@ const AddReportStackNavigator = () => {
                 gestureDirection:"horizontal",
             }}>
                 <Stack.Screen name="addreport" component={Report} /> 
+                <Stack.Screen name="posttype" component={PostType}/>
                 
         </Stack.Navigator>
     )

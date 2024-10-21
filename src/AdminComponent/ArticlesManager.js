@@ -35,25 +35,25 @@ const ArticlesManager = () => {
             }}
         >
             <Tab.Screen name="Tất cả">
-                {() => <PostsList posts={posts} status={null} />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status={null} />}
             </Tab.Screen>
             <Tab.Screen name="Chưa duyệt">
-                {() => <PostsList posts={posts} status="Chưa duyệt" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Chưa duyệt" />}
             </Tab.Screen>
             <Tab.Screen name="Đang kiểm tra">
-                {() => <PostsList posts={posts} status="Đang kiểm tra" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Đang kiểm tra" />}
             </Tab.Screen>
             <Tab.Screen name="Chờ xử lí">
-                {() => <PostsList posts={posts} status="Chờ xử lí" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Chờ xử lí" />}
             </Tab.Screen>
             <Tab.Screen name="Đang xử lí">
-                {() => <PostsList posts={posts} status="Đang xử lí" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Đang xử lí" />}
             </Tab.Screen>
             <Tab.Screen name="Đã hoàn thành">
-                {() => <PostsList posts={posts} status="Đã hoàn thành" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Đã hoàn thành" />}
             </Tab.Screen>
             <Tab.Screen name="Từ chối">
-                {() => <PostsList posts={posts} status="Từ chối" />}
+                {() => <PostsList posts={posts} updatePosts={setPosts} status="Từ chối" />}
             </Tab.Screen>
         </Tab.Navigator>
     );
