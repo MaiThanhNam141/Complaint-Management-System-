@@ -25,6 +25,21 @@ const Report = ({ navigation }) => {
     const { userExist } = useContext(UserContext)
 
     useEffect(() => {
+        if (!userExist) {
+            Alert.alert(
+                'Đã xảy ra lỗi',
+                'Bạn cần đăng nhập để đăng báo cáo !',
+                [
+                    { text: 'Đăng nhập', onPress: handleLogin },
+                    { text: 'Hủy', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
+                ]
+            );
+            return;
+        }
+        
+    }, [userExist])
+
+    useEffect(() => {
         // Hàm lấy thông tin người dùng hiện tại để thay thế vào đăng báo cáo
         const fetchUserInfo = async () => {
             try {
@@ -69,7 +84,7 @@ const Report = ({ navigation }) => {
             .catch((error) => {
                 console.error("Có lỗi xảy ra khi thực hiện 2 hàm", error);
             });
-    }, [userExist]);
+    }, []);
 
     // Hàm này chuyển đến screen login
     const handleLogin = () => {
@@ -223,7 +238,6 @@ const Report = ({ navigation }) => {
             desc: result.desc,
             type: result.type,
         };
-        console.log(formattedResult);
         setDetailData(formattedResult);
     };
 
@@ -321,10 +335,11 @@ const Report = ({ navigation }) => {
                 Severity: "Nhẹ",
             };
             const newArticleRef = articlesRef.doc(newId.toString());
-            Promise.all([newArticleRef.set(articleData), countersRef.update({ articlesId: newId })])
+            Promise.all([newArticleRef.set(articleData), countersRef.update({ articlesId: newId }), updateMyArticles(articleData.id)])
             setReportImage([]);
             setReportInput("");
             setDetailData("");
+            setSelectedLocation(null);
             navigation.navigate('posttype', { type: detailData.type, name: detailData.type });
         } catch (error) {
             console.error(error)
@@ -333,22 +348,34 @@ const Report = ({ navigation }) => {
         }
     }
 
+    const updateMyArticles = (postId) => {
+        try {
+            const user = getCurrentUser();
+            const userRef = firestore().collection('users').doc(user.uid);
+            userRef.update({
+                postsUpload: firestore.FieldValue.arrayUnion(postId),
+            })
+        } catch (error) {
+            console.error('Lỗi cập nhật likes:', error);
+        }
+    };
+    
     return (
         <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <View style={styles.reportContainer}>
                 <View style={styles.avatarContainer}>
                     <Image source={{ uri: user.photoURL || defaultAvatar }} style={styles.avatar} />
-                    <Text style={{ fontWeight: '800', color: 'black' }}>{user.displayName || 'Người dùng'}</Text>
+                    <Text style={{ fontWeight: '800', color: 'black' }}>{user.displayName || 'Người dùng chưa đăng nhập'}</Text>
                 </View>
                 <TextInput
                     style={styles.textInput}
-                    placeholder={`${user.displayName} ơi, bạn muốn báo cáo về vấn đề gì?`}
+                    placeholder={user ? `${user.displayName} ơi, bạn muốn báo cáo về vấn đề gì?` : "Bạn cần đăng nhập để gửi báo cáo"}
                     value={reportInput}
                     onChangeText={(text) => setReportInput(text)}
                     multiline={true}
                 />
                 {reportImage.length > 0 && (
-                    <View style={{ flexWrap: 'wrap', flexDirection: 'row', justifyContent:'space-between' }}>
+                    <View style={{ flexWrap: 'wrap', flexDirection: 'row', justifyContent:'flex-start', marginRight:10 }}>
                         {reportImage.map((imageUri, index) => (
                             <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Image source={{ uri: imageUri }} style={styles.image} />
@@ -419,7 +446,7 @@ const Report = ({ navigation }) => {
                 </Modal>
             </View>
             <TouchableOpacity style={styles.button} onPress={showConfirmAlert}>
-                {loading ? <ActivityIndicator size={'large'} /> : <Text style={styles.buttonText}>Đăng Báo Cáo</Text>}
+                {loading ? <ActivityIndicator size={'large'} color={'#fff'}/> : <Text style={styles.buttonText}>Đăng Báo Cáo</Text>}
             </TouchableOpacity>
             <Modal
                 visible={isDetailVisible}

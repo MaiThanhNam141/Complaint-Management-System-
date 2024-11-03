@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useMemo} from 'react';
-import {Linking, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, SafeAreaView } from 'react-native';
+import {Linking, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, SafeAreaView, Alert } from 'react-native';
 import ImageViewing from 'react-native-image-viewing';
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 

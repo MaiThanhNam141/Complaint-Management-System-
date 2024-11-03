@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Modal, ToastAndroid, Share, Text, View, StyleSheet, ImageBackground, RefreshControl, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Modal, ToastAndroid, Share, Text, View, StyleSheet, ImageBackground, RefreshControl, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import SkeletonPost from './SkeletonPost';
 import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -23,7 +23,7 @@ const PostUpload = ({ route, navigation }) => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [isLiked, setIsLiked] = useState([]);
     const [postsUpload, setPostsUpload] = useState(route.params?.postsUpload || [])
-    
+
     const onRefresh = () => {
         setInitialLoading(true);
         setRefreshing(true);
@@ -138,6 +138,35 @@ const PostUpload = ({ route, navigation }) => {
         setSelectedPost(post);
         setCommentModal(true);
     }
+
+    const handleDeleteArticles = (id) => {
+        Alert.alert(
+            "Xác nhận xóa",
+            "Có thật sự chắc chắn xóa bài đăng hay không? \nHành động này không thể hoàn tác.",
+            [
+                {
+                    text: "Hủy",
+                    style: "cancel"
+                },
+                {
+                    text: "OK", onPress: () => {
+                        deleteArticles(id);
+                    }
+                }
+            ]
+        );
+    };
+    const deleteArticles = async (id) => {
+        try {
+          await firestore().collection('articles').doc(post.id.toString()).delete();
+          ToastAndroid.show("Xóa thành công", ToastAndroid.SHORT);
+          posts = posts.filter(post => post.id !== id);
+        } catch (error) {
+          ToastAndroid.show("Xóa thất bại", ToastAndroid.SHORT);
+          console.error(error);
+        }
+      }
+
     const fetchPosts = async () => {
         try {
             if (loading) return 0;
@@ -207,6 +236,10 @@ const PostUpload = ({ route, navigation }) => {
                         <MaterialIcons name="share" size={20} color="#000" />
                         <Text style={styles.actionText}>Chia sẻ</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteArticles(post.id)}>
+                        <MaterialIcons name="trash" size={20} color="#000" />
+                        <Text style={styles.actionText}>Xóa bài đang</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         ));
@@ -222,7 +255,7 @@ const PostUpload = ({ route, navigation }) => {
         )
     } else if (isLiked.length === 0) {
         return (
-            <ImageBackground style={[styles.container, { justifyContent:'center' }]} source={require("../../assets/background.png")}>
+            <ImageBackground style={[styles.container, { justifyContent: 'center' }]} source={require("../../assets/background.png")}>
                 <Text style={{ fontSize: 18, textAlign: 'center', padding: 20 }}>
                     Bạn chưa đăng tải bất kỳ bài viết nào
                 </Text>

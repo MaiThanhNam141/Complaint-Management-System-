@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Agenda } from 'react-native-calendars';
 import firestore from '@react-native-firebase/firestore';
-import { Alert, View, Text, StyleSheet } from 'react-native';
+import { Alert, TouchableOpacity, View, Text, StyleSheet, Linking } from 'react-native';
 
 const CalendarSchedule = () => {
   const [items, setItems] = useState({});
@@ -31,7 +31,7 @@ const CalendarSchedule = () => {
     const newItems = {};
 
     articles.forEach(article => {
-      const { title, startRepairDate, completeDate } = article;
+      const { title, startRepairDate, completeDate, responseUnit, locate } = article;
 
       // Chuyển timestamp thành đối tượng Date chỉ với phần ngày
       const startDate = new Date(startRepairDate.toDate().setHours(0, 0, 0, 0));
@@ -56,6 +56,8 @@ const CalendarSchedule = () => {
           height: 50,
           isStart,
           isComplete,
+          responseUnit,
+          locate, // Thêm locate vào item
         });
       }
     });
@@ -78,21 +80,42 @@ const CalendarSchedule = () => {
     };
 
     loadArticles();
-  }, [articles]); 
+  }, [articles]);
+
+  // Hàm mở Google Maps từ tọa độ
+  const openMap = async (latitude, longitude) => {
+    const googleMapsAppURL = `comgooglemaps://?q=${latitude},${longitude}`; // URL để mở trong app Google Maps
+    const googleMapsWebURL = `https://www.google.com/maps?q=${latitude},${longitude}`; // URL để mở trên website
+
+    try {
+      const isGoogleMapsAppInstalled = await Linking.canOpenURL(googleMapsAppURL);
+
+      if (isGoogleMapsAppInstalled) {
+        await Linking.openURL(googleMapsAppURL);
+      } else {
+        await Linking.openURL(googleMapsWebURL);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Không thể mở Google Maps');
+    }
+  };
 
   const renderItem = (item) => (
-    <View
+    <TouchableOpacity
+      onPress={() => item?.locate && openMap(item.locate.latitude, item.locate.longitude)}
       style={[
         styles.itemContainer,
         item.isStart && styles.startItem,
         item.isComplete && styles.completeItem,
       ]}
     >
-      <Text style={{ fontStyle: 'italic'}}>
-        <Text style={{ fontWeight: '600', fontStyle:'normal'}}>{item.name}</Text>{` - ngày giải quyết thứ ${item.order}`}
+      <Text style={{ fontStyle: 'italic' }}>
+        <Text style={{ fontWeight: '600', fontStyle: 'normal' }}>{item.name}</Text>
+        {` - ngày giải quyết thứ ${item.order}\nĐơn vị chịu trách nhiệm: ${item.responseUnit}`}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
+
 
   return (
     <Agenda
