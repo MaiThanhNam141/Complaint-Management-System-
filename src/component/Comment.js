@@ -85,24 +85,48 @@ const Comment = ({ post, onClose, onLogin }) => {
                 contentComment: comment,
                 date: firestore.Timestamp.now(),
             };
-            await firestore()
-                .collection('articles')
-                .doc(postid.toString())
-                .update({
-                    comments: firestore.FieldValue.arrayUnion(newComment),
-                })
-                .then(() => {
-                    ToastAndroid.show("Bình luận thành công", ToastAndroid.SHORT);
-                    setComment((prevComment) => [...prevComment, newComment]);
-                })
-                .catch((error) => {
-                    console.log(error);
-                })
+    
+            // Tạo một mảng chứa các thao tác bất đồng bộ
+            const updatePromises = [
+                firestore()
+                    .collection('articles')
+                    .doc(postid.toString())
+                    .update({
+                        comments: firestore.FieldValue.arrayUnion(newComment),
+                    })
+            ];
+    
+            // Nếu bài viết có chủ sở hữu (post.uid), thêm tác vụ gửi thông báo vào mảng promises
+            if (post?.userUploadUID) {
+                const textNotify = {
+                    content: `Báo cáo có id ${postid} của bạn đã có bình luận mới!`,
+                    id: postid,
+                    date: firestore.Timestamp.now(),
+                };
+                updatePromises.push(
+                    firestore()
+                        .collection('users')
+                        .doc(post.userUploadUID)
+                        .update({
+                            notRead: true,
+                            dataNotify: firestore.FieldValue.arrayUnion(textNotify),
+                        })
+                );
+            }
+    
+            // Thực thi tất cả các promises cùng lúc để tăng hiệu suất
+            await Promise.all(updatePromises);
+    
+            // Nếu thành công, cập nhật bình luận vào state và hiển thị thông báo
+            setComment((prevComment) => [...prevComment, newComment]);
+            ToastAndroid.show("Bình luận thành công", ToastAndroid.SHORT);
+            
         } catch (error) {
             console.error("Lỗi khi bình luận: ", error);
             ToastAndroid.show("Bình luận thất bại", ToastAndroid.SHORT);
         }
     };
+    
 
     return (
         <KeyboardAvoidingView style={styles.backgroundContainer}>

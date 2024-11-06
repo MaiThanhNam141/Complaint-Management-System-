@@ -69,21 +69,43 @@ const PostsList = memo(({ posts, status, updatePosts }) => {
 
     const handleSave = async (post) => {
         try {
-            await firestore()
-                .collection('articles')
-                .doc(post.id.toString())
-                .update(post)
-                .then(() => {
-                    ToastAndroid.show("Thành công", ToastAndroid.SHORT);
-                })
-                .catch((error) => {
-                    console.log(error);
-                })
+            // Tạo một mảng promises để thực hiện các thao tác bất đồng bộ
+            const updatePromises = [
+                firestore()
+                    .collection('articles')
+                    .doc(post.id.toString())
+                    .update(post)
+            ];
+    
+            // Thêm tác vụ gửi thông báo nếu bài viết có chủ sở hữu (post.uid)
+            if (post?.userUploadUID) {
+                const textNotify = {
+                    content: `Báo cáo có id ${post.id} của bạn đã có bình luận mới!`,
+                    id: post.id,
+                    date: firestore.Timestamp.now(),
+                };
+                updatePromises.push(
+                    firestore()
+                        .collection('users')
+                        .doc(post.userUploadUID)
+                        .update({
+                            notRead: true,
+                            dataNotify: firestore.FieldValue.arrayUnion(textNotify),
+                        })
+                );
+            }
+    
+            // Thực thi tất cả các promises đồng thời để tăng hiệu suất
+            await Promise.all(updatePromises);
+    
+            // Thông báo thành công sau khi tất cả các tác vụ hoàn tất
+            ToastAndroid.show("Thành công", ToastAndroid.SHORT);
         } catch (error) {
-            console.error("handleSave Error:  ", error);
-
+            console.error("handleSave Error: ", error);
+            ToastAndroid.show("Có lỗi xảy ra", ToastAndroid.SHORT);
         }
-    }
+    };
+    
 
     const handleDelete = (id) => {
         const updatedPosts = posts.filter(post => post.id !== id);

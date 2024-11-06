@@ -115,21 +115,47 @@ const ResponsePost = ({ post, onClose, onSave, onSliceIdDeleted }) => {
   };
 
   const savePost = () => {
+    //Đảm bảo dữ liệu đầy đ
+    if ((status === 'Đang xử lí' || status === 'Đã hoàn thành') && (!startRepairDate || !endRepairDate)) {
+      Alert.alert("Lỗi", "Vui lòng chọn ngày bắt đầu và ngày hoàn thành cho trạng thái hiện tại.");
+      return;
+    }
+
+    // Chuyển dữ liệu từ String sang Timestamp
+    const firestoreStartRepairDate = (status === 'Đang xử lí' || status === 'Đã hoàn thành')
+      ? firestore.Timestamp.fromDate(new Date(startRepairDate))
+      : null;
+    const firestoreCompleteDate = (status === 'Đang xử lí' || status === 'Đã hoàn thành')
+      ? firestore.Timestamp.fromDate(new Date(endRepairDate))
+      : null;
+
     const reportDateString = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
-    const updatedPost = {
-      ...post, // Sao chép dữ liệu cũ
-      responseDate: reportDateString || "", 
-      status: status,
-      severity: severity,
-      responseDesc: responseDesc || "", 
-      responseUnit: responseUnit || "", 
-      startRepairDate: startRepairDate || "", 
-      completeDate: endRepairDate || "",
-    };
-  
-    onSave(updatedPost);
+
+    if ( status === 'Đang xử lí' || status === 'Đã hoàn thành' ) {
+      const updatedPost = {
+        ...post, // Existing data
+        responseDate: reportDateString || "",
+        status: status,
+        severity: severity,
+        responseDesc: responseDesc || "",
+        responseUnit: responseUnit || "",
+        startRepairDate: firestoreStartRepairDate,
+        completeDate: firestoreCompleteDate,
+      };
+      onSave(updatedPost);
+    } else {
+      const updatedPost = {
+        ...post, // Existing data
+        responseDate: reportDateString || "",
+        status: status,
+        severity: severity,
+        responseDesc: responseDesc || "",
+        responseUnit: responseUnit || "",
+      };
+      onSave(updatedPost);
+    }
     onClose();
-  }
+  };
 
   const memoizedPosts = useMemo(() => {
     return (

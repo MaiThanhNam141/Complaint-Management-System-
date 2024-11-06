@@ -41,7 +41,7 @@ const BottomTabNavigation = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName={'Home'}
+      initialRouteName={'Trang chủ'}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,

@@ -29,27 +29,32 @@ const CalendarSchedule = () => {
   // Hàm để chuyển đổi articles thành items cho Agenda
   const processArticlesToAgendaItems = (articles) => {
     const newItems = {};
-
+  
     articles.forEach(article => {
       const { title, startRepairDate, completeDate, responseUnit, locate } = article;
-
-      // Chuyển timestamp thành đối tượng Date chỉ với phần ngày
+  
+      // Check if startRepairDate and completeDate are defined and valid
+      if (!startRepairDate || !completeDate) {
+        console.warn(`Missing start or complete date for article: ${title}`);
+        return; // Skip this article if either date is missing
+      }
+  
+      // Convert Firestore Timestamps to Date objects
       const startDate = new Date(startRepairDate.toDate().setHours(0, 0, 0, 0));
       const endDate = new Date(completeDate.toDate().setHours(0, 0, 0, 0));
       let order = 1;
-
-      // Duyệt qua tất cả các ngày từ startRepairDate đến completeDate
+  
+      // Loop through each day from startRepairDate to completeDate
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1), order++) {
         const dateString = d.toISOString().split('T')[0];
-
+  
         if (!newItems[dateString]) {
           newItems[dateString] = [];
         }
-
-        // Đánh dấu ngày bắt đầu và ngày kết thúc đặc biệt
+  
         const isStart = d.getTime() === startDate.getTime();
         const isComplete = d.getTime() === endDate.getTime();
-
+  
         newItems[dateString].push({
           order: order,
           name: title,
@@ -57,13 +62,14 @@ const CalendarSchedule = () => {
           isStart,
           isComplete,
           responseUnit,
-          locate, // Thêm locate vào item
+          locate,
         });
       }
     });
-
+  
     return newItems;
   };
+  
 
   useEffect(() => {
     const loadArticles = async () => {

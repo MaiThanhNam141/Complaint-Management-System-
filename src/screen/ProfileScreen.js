@@ -184,6 +184,10 @@ const ProfileScreen = ({navigation}) => {
         }
     };
 
+    const handleCloseModal = () => {
+        setModalVisible(false);
+    }
+
     if (loading) {
         <View style={{ flex: 1 }}>
             <ActivityIndicator size={'large'} />
@@ -193,7 +197,7 @@ const ProfileScreen = ({navigation}) => {
     return (
         <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
             <Modal animationType={'fade'} visible={modalVisible} onRequestClose={() => setModalVisible(false)} >
-                <About />
+                <About onClose={handleCloseModal} />
             </Modal>
             <View style={styles.userSection}>
                 <View style={styles.logoContainer}>

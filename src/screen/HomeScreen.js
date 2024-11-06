@@ -1,42 +1,84 @@
-import React, {useMemo, useState} from 'react';
-import { Modal, FlatList, Text, View, StyleSheet, TouchableOpacity, Image, ImageBackground, ScrollView, Dimensions } from 'react-native';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
+import { Modal, FlatList, Text, View, StyleSheet, TouchableOpacity, Image, ImageBackground, Dimensions } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { getUserInfo, updateUserInfo } from '../context/FirestoreFunction';
+import { UserContext } from '../context/UserContext';
 
 const screen = Dimensions.get('screen');
 
-const HomeScreen = ({navigation}) => {
-    const [modalNotificationVisible, setModalNotificationVisible] = useState(false);
+const HomeScreen = ({ navigation }) => {
+    const [modalNotificationVisible, setModalNotificationVisible] = useState(true);
+    const [notRead, setNotRead] = useState(false);
+    const [dataNotify, setDataNotify] = useState();
 
-    const typeItems = useMemo(() =>
-        [
-            {id: 1, name: 'Giao thông', type: 'Giao thông', image: require('../../assets/Giaothong.png')},
-            {id: 2, name: 'Môi trường', type: 'Môi trường', image: require('../../assets/Moitruong.png')},
-            {id: 3, name: 'Cấp - Thoát nước', type: 'Cấp - Thoát nước', image: require('../../assets/CapThoatnuoc.png')},
-            {id: 4, name: 'Chiếu sáng', type: 'Chiếu sáng', image: require('../../assets/Chieusang.png')},
-            {id: 5, name: 'Trật tự đô thị', type: 'Trật tự đô thị', image: require('../../assets/TrattuXH.png')},
-            {id: 6, name: 'Điện lực', type: 'Điện lực', image: require('../../assets/Dienluc.png')},
-            {id: 7, name: 'Khác', type: 'Khác', image: require('../../assets/Khac.png')},
+    const { userExist } = useContext(UserContext);
 
-            
-        ], [])
+    useEffect(() => {
+        const fetchNotify = async () => {
+            const snapshot = await getUserInfo();
+            if (snapshot) {
+                setNotRead(snapshot?.isRead || false);
+                setDataNotify(snapshot?.dataNotify || []);
+                updateUserInfo({ notRead: false });
+            }
+        };
+        if (userExist) fetchNotify();
+    }, [userExist]);
+
+    const typeItems = useMemo(
+        () => [
+            { id: 1, name: 'Giao thông', type: 'Giao thông', image: require('../../assets/Giaothong.png') },
+            { id: 2, name: 'Môi trường', type: 'Môi trường', image: require('../../assets/Moitruong.png') },
+            { id: 3, name: 'Cấp - Thoát nước', type: 'Cấp - Thoát nước', image: require('../../assets/CapThoatnuoc.png') },
+            { id: 4, name: 'Chiếu sáng', type: 'Chiếu sáng', image: require('../../assets/Chieusang.png') },
+            { id: 5, name: 'Trật tự đô thị', type: 'Trật tự đô thị', image: require('../../assets/TrattuXH.png') },
+            { id: 6, name: 'Điện lực', type: 'Điện lực', image: require('../../assets/Dienluc.png') },
+            { id: 7, name: 'Khác', type: 'Khác', image: require('../../assets/Khac.png') },
+        ],
+        []
+    );
 
     const pickType = (item) => {
         navigation.navigate('posttype', { type: item.type, name: item.name });
-    }
-    const renderItem = ({item}) => (
+    };
+
+    const renderItem = ({ item }) => (
         <TouchableOpacity onPress={() => pickType(item)} style={styles.typeButton}>
             <Image source={item.image} style={styles.typeItemImage} />
             <Text style={styles.typeItemText}>{item.name}</Text>
         </TouchableOpacity>
     );
+
+    const formatDate = (timestamp) => {
+        const date = new Date(timestamp._seconds * 1000); // Tạo Date từ timestamp._seconds
+        return date.toLocaleString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    };
+
+    const renderNotifyItem = ({ item }) => (
+        <View style={styles.notifyItem}>
+            <Text style={styles.notificationText}>{item.content}</Text>
+            <Text style={styles.notificationDate}>{formatDate(item.date)}</Text>
+        </View>
+    );
+
     return (
         <ImageBackground source={require("../../assets/background.png")} style={styles.background}>
             <View style={styles.banner}>
-                <Image style={styles.logoImg} source={require("../../assets/anhbia.jpg")}/>
+                <Image style={styles.logoImg} source={require("../../assets/anhbia.jpg")} />
             </View>
-            <Text style={{color:'#49688d', fontWeight:'700', alignSelf:'center', marginVertical:10, fontSize:18}}>Hệ thống tiếp nhận các lĩnh vực</Text>
+            <Text style={{ color: '#49688d', fontWeight: '700', alignSelf: 'center', marginVertical: 10, fontSize: 18 }}>Hệ thống tiếp nhận các lĩnh vực</Text>
             <TouchableOpacity onPress={() => setModalNotificationVisible(true)} style={styles.bell}>
                 <MaterialIcons name="notifications-active" size={32} color="#fff" />
+                {
+                    notRead && <Text style={styles.notRead}>!</Text>
+                }
             </TouchableOpacity>
             <FlatList
                 data={typeItems}
@@ -55,8 +97,16 @@ const HomeScreen = ({navigation}) => {
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Thông báo</Text>
                         <View style={styles.dividerModal} />
-                        <View style={{alignItems: 'center',}}>
-                            <Text style={styles.notificationText}>Bạn chưa có thông báo nào</Text>
+                        <View style={{ paddingHorizontal: 5 }}>
+                            {dataNotify && dataNotify.length > 0 ? (
+                                <FlatList
+                                    data={dataNotify}
+                                    renderItem={renderNotifyItem}
+                                    keyExtractor={(item) => item.id.toString()}
+                                />
+                            ) : (
+                                <Text style={[styles.notificationText, { alignSelf: 'center' }]}>Bạn chưa có thông báo nào</Text>
+                            )}
                         </View>
                         <TouchableOpacity
                             style={styles.closeButton}
@@ -76,47 +126,52 @@ export default HomeScreen;
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        resizeMode: 'cover',
-        justifyContent:'flex-start'
     },
     banner: {
         alignItems: 'center',
         justifyContent: 'flex-start',
     },
-    bell:{
-        position:'absolute',
-        top:15,
-        right:30,
-        backgroundColor:'#3669a4',
-        padding:5,
-        borderRadius:100
+    bell: {
+        position: 'absolute',
+        top: 15,
+        right: 30,
+        backgroundColor: '#3669a4',
+        padding: 5,
+        borderRadius: 100,
+    },
+    notRead :{
+        position: 'absolute',
+        paddingHorizontal: 6,
+        backgroundColor: 'red',
+        color:'#fff',
+        borderRadius: 100,
+        top: 0,
+        right: 5,
+        fontSize: 10,
     },
     logoImg: {
-        resizeMode:'contain',
-        height:screen.width/2
+        resizeMode: 'contain',
+        height: screen.width / 2,
     },
-    typeButton:{
-        margin:5,
+    typeButton: {
+        margin: 5,
         alignItems: 'center',
-        justifyContent:'center',
-        width:screen.width / 2 - 20,
-        height:150,
+        justifyContent: 'center',
+        width: screen.width / 2 - 20,
+        height: 150,
     },
     typeItemImage: {
         width: 100,
         height: 100,
-        marginRight: 10,
-        borderRadius:23,
-        resizeMode:'contain'
+        borderRadius: 23,
+        resizeMode: 'contain',
     },
     typeItemText: {
         fontSize: 15,
-        textAlign:'center'
+        textAlign: 'center',
     },
     renderList: {
-        justifyContent: 'center',
         paddingHorizontal: 5,
-        paddingVertical: 10,
     },
     modalContainer: {
         flex: 1,
@@ -145,6 +200,16 @@ const styles = StyleSheet.create({
     notificationText: {
         fontSize: 16,
         color: '#333',
+    },
+    notificationDate: {
+        fontSize: 12,
+        color: '#666',
+        textAlign: 'right',
+    },
+    notifyItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
     },
     closeButton: {
         position: 'absolute',

@@ -22,7 +22,27 @@ const PostUpload = ({ route, navigation }) => {
     const [lastDoc, setLastDoc] = useState(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isLiked, setIsLiked] = useState([]);
-    const [postsUpload, setPostsUpload] = useState(route.params?.postsUpload || [])
+    const [postsUpload, setPostsUpload] = useState(route.params?.postsUpload || []);
+    const [isFetched, setIsFetched] = useState(false);
+
+    useEffect(() => {
+        const fetchUserUpload = async () => {
+            try {
+                const user = await getUserInfo();
+                if (user) {
+                    setIsLiked(user?.likes || []);
+                    setPostsUpload(user.postsUpload)
+                }
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setIsFetched(true);
+            }
+        };
+
+        if (!postsUpload.length) fetchUserUpload();
+        else setIsFetched(true); 
+    }, []);
 
     const onRefresh = () => {
         setInitialLoading(true);
@@ -65,10 +85,10 @@ const PostUpload = ({ route, navigation }) => {
     };
 
     useEffect(() => {
-        if (refreshing) {
+        if (refreshing && isFetched) {
             fetchPosts();
         }
-    }, [refreshing]);
+    }, [refreshing, isFetched]);
 
     const handleScroll = () => {
         if (!loading && lastDoc) {

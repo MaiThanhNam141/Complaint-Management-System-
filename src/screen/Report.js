@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Alert, Text, View, StyleSheet, TextInput, Image, ImageBackground, ToastAndroid, TouchableOpacity, PermissionsAndroid, Modal, Button, ActivityIndicator } from 'react-native';
-import { getUserInfo } from '../context/FirestoreFunction';
+import { getUserInfo, getCurrentUser } from '../context/FirestoreFunction';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImagePicker from 'react-native-image-crop-picker';
 import MapView, { Marker } from 'react-native-maps';
@@ -44,6 +44,8 @@ const Report = ({ navigation }) => {
         const fetchUserInfo = async () => {
             try {
                 const user = await getUserInfo();
+                console.log(user.uid);
+                
                 if (user) {
                     setUser(user);
                 } else {
@@ -84,7 +86,7 @@ const Report = ({ navigation }) => {
             .catch((error) => {
                 console.error("Có lỗi xảy ra khi thực hiện 2 hàm", error);
             });
-    }, []);
+    }, [userExist]);
 
     // Hàm này chuyển đến screen login
     const handleLogin = () => {
@@ -292,6 +294,18 @@ const Report = ({ navigation }) => {
     const handleSubmit = async () => {
         try {
             setLoading(true);
+            const userC = getCurrentUser();
+            if (!userC) {
+                Alert.alert(
+                    'Thông báo',
+                    'Bạn cần đăng nhập để sử dụng tính năng này này',
+                    [
+                        { text: 'Đăng nhập', onPress: handleLogin },
+                        { text: 'Hủy', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
+                    ]
+                );
+                ToastAndroid.show("Tất cả dữ liệu sẽ không được lưu nếu bạn không đăng nhập", ToastAndroid.SHORT);
+            }
             if (!detailData.address || !detailData.desc || !detailData.type || !reportInput) {
                 ToastAndroid.show("Lỗi! Hãy điền đầy đủ thông tin", ToastAndroid.SHORT)
                 return;
@@ -325,6 +339,7 @@ const Report = ({ navigation }) => {
                 status: "Chưa duyệt",
                 location: new firestore.GeoPoint(locationData.latitude, locationData.longitude),
                 id: newId,
+                userUploadUID:  userC?.uid,
                 displayName: user?.displayName,
                 reportDate: reportDateString,
                 likes: 0,
@@ -348,11 +363,11 @@ const Report = ({ navigation }) => {
         }
     }
 
-    const updateMyArticles = (postId) => {
+    const updateMyArticles = async (postId) => {
         try {
             const user = getCurrentUser();
             const userRef = firestore().collection('users').doc(user.uid);
-            userRef.update({
+            await userRef.update({
                 postsUpload: firestore.FieldValue.arrayUnion(postId),
             })
         } catch (error) {

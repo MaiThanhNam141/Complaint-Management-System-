@@ -5,7 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImageViewing from 'react-native-image-viewing';
 import PostDetailsModal from './PostDetailsModal';
-import { updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
+import { getUserInfo, updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
 import Comment from './Comment';
 
 const LikedPost = ({ route, navigation }) => {
@@ -22,7 +22,33 @@ const LikedPost = ({ route, navigation }) => {
     const [lastDoc, setLastDoc] = useState(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isLiked, setIsLiked] = useState(route.params?.likes || []);
+    const [likesFetched, setLikesFetched] = useState(false);
 
+    // sẽ lấy dữ liệu bài viết đã thích từ server lại 1 lần nữa nếu nó rỗng
+    useEffect(() => {
+        const fetchUserLike = async () => {
+            try {
+                const user = await getUserInfo();
+                if (user) {
+                    setIsLiked(user?.likes || []);
+                }
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setLikesFetched(true);
+            }
+        };
+
+        if (!isLiked.length) fetchUserLike();
+        else setLikesFetched(true); 
+    }, []);
+
+    // lấy dữ liệu bài viết đã thích từ server chỉ sau khi đã hoàn thành kiểm tra lại danh sách bài viết đã thích
+    useEffect(() => {
+        if (refreshing && likesFetched) {
+            fetchPosts();
+        }
+    }, [refreshing, likesFetched]);
 
     const onRefresh = () => {
         setInitialLoading(true);
@@ -63,12 +89,6 @@ const LikedPost = ({ route, navigation }) => {
             ToastAndroid.show("Thất bại! hãy kiểm tra lại internet", ToastAndroid.SHORT);
         }
     };
-
-    useEffect(() => {
-        if (refreshing) {
-            fetchPosts();
-        }
-    }, [refreshing]);
 
     const handleScroll = () => {
         if (!loading && lastDoc) {
@@ -221,7 +241,7 @@ const LikedPost = ({ route, navigation }) => {
         )
     } else if (isLiked.length === 0) {
         return (
-            <ImageBackground style={[styles.container, { justifyContent:'center' }]} source={require("../../assets/background.png")}>
+            <ImageBackground style={[styles.container, { justifyContent: 'center' }]} source={require("../../assets/background.png")}>
                 <Text style={{ fontSize: 18, textAlign: 'center', padding: 20, }}>
                     Bạn chưa like bất kỳ bài viết nào
                 </Text>
