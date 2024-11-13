@@ -16,9 +16,16 @@ const ResponsePost = ({ post, onClose, onSave, onSliceIdDeleted }) => {
   const [status, setStatus] = useState(post?.status || "Chưa duyệt");
   const noImageAvailable = require('../../assets/noImage.jpg');
 
-  // State to handle dates
-  const [startRepairDate, setStartRepairDate] = useState(post?.startRepairDate || 'Chưa chọn');
-  const [endRepairDate, setEndRepairDate] = useState(post?.endRepairDate || 'Chưa chọn');
+  const initialStartRepairDate = post?.startRepairDate instanceof firestore.Timestamp
+    ? post.startRepairDate.toDate().toISOString().split('T')[0]
+    : post?.startRepairDate || 'Chưa chọn';
+
+  const initialEndRepairDate = post?.endRepairDate instanceof firestore.Timestamp
+    ? post.endRepairDate.toDate().toISOString().split('T')[0]
+    : post?.endRepairDate || 'Chưa chọn';
+
+  const [startRepairDate, setStartRepairDate] = useState(initialStartRepairDate);
+  const [endRepairDate, setEndRepairDate] = useState(initialEndRepairDate);
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
@@ -131,7 +138,7 @@ const ResponsePost = ({ post, onClose, onSave, onSliceIdDeleted }) => {
 
     const reportDateString = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
 
-    if ( status === 'Đang xử lí' || status === 'Đã hoàn thành' ) {
+    if (status === 'Đang xử lí' || status === 'Đã hoàn thành') {
       const updatedPost = {
         ...post, // Existing data
         responseDate: reportDateString || "",
@@ -218,13 +225,13 @@ const ResponsePost = ({ post, onClose, onSave, onSliceIdDeleted }) => {
           <TextInput
             style={styles.adminInfoText}
             value={responseDesc}
-            onChangeText={(text) => setResponseDesc(text)}
+            onChangeText={setResponseDesc}
             placeholder="Mô tả phản hồi"
           />
           <TextInput
             style={styles.adminInfoText}
             value={responseUnit}
-            onChangeText={(text) => setResponseUnit(text)}
+            onChangeText={setResponseUnit}
             placeholder="Đơn vị phản hồi"
           />
           <Text style={styles.adminInfoText}>Ngày phản hồi: {post?.responseDate || 'Chưa có thông tin'}</Text>
@@ -244,10 +251,10 @@ const ResponsePost = ({ post, onClose, onSave, onSliceIdDeleted }) => {
         </View>
       </View>
     );
-  }, [post, status, severity, startRepairDate, endRepairDate]);
+  }, [post, status, severity, startRepairDate, endRepairDate, responseDesc, responseUnit]);
 
   return (
-    <ScrollView style={{ flex: 1 }}>
+    <ScrollView style={{ flex: 1, padding: 10 }}>
       <View style={styles.postContainer}>
         {memoizedPosts}
       </View>
@@ -279,6 +286,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     elevation: 5,
+    borderWidth: 1,
+    marginBottom: 35
   },
   postHeader: {
     flexDirection: 'row',

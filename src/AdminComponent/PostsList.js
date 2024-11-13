@@ -67,39 +67,46 @@ const PostsList = memo(({ posts, status, updatePosts }) => {
         console.log("Hello");
     };
 
-    const handleSave = async (post) => {
+    const handleSave = (updatedPost) => {
         try {
-            // Tạo một mảng promises để thực hiện các thao tác bất đồng bộ
+            // Cập nhật Firebase
             const updatePromises = [
                 firestore()
                     .collection('articles')
-                    .doc(post.id.toString())
-                    .update(post)
+                    .doc(updatedPost.id.toString())
+                    .update(updatedPost)
             ];
     
-            // Thêm tác vụ gửi thông báo nếu bài viết có chủ sở hữu (post.uid)
-            if (post?.userUploadUID) {
+            // Nếu bài viết có chủ sở hữu, thêm thông báo
+            if (updatedPost?.userUploadUID) {
                 const textNotify = {
-                    content: `Báo cáo có id ${post.id} của bạn đã có bình luận mới!`,
-                    id: post.id,
+                    content: `Báo cáo về ${updatedPost.title} của bạn đã có bình luận mới!`,
+                    id: updatedPost.id,
                     date: firestore.Timestamp.now(),
                 };
                 updatePromises.push(
                     firestore()
                         .collection('users')
-                        .doc(post.userUploadUID)
+                        .doc(updatedPost.userUploadUID)
                         .update({
                             notRead: true,
                             dataNotify: firestore.FieldValue.arrayUnion(textNotify),
                         })
                 );
             }
+            
+            // Cập nhật posts cục bộ
+            updatePosts((prevPosts) =>
+                prevPosts.map((post) =>
+                    post.id === updatedPost.id ? { ...post, ...updatedPost } : post
+                )
+            );
+
+            // Chờ tất cả các tác vụ cập nhật Firebase hoàn tất
+            Promise.all(updatePromises);
     
-            // Thực thi tất cả các promises đồng thời để tăng hiệu suất
-            await Promise.all(updatePromises);
-    
-            // Thông báo thành công sau khi tất cả các tác vụ hoàn tất
-            ToastAndroid.show("Thành công", ToastAndroid.SHORT);
+            // Hiển thị thông báo thành công
+            ToastAndroid.show("Cập nhật thành công", ToastAndroid.SHORT);
         } catch (error) {
             console.error("handleSave Error: ", error);
             ToastAndroid.show("Có lỗi xảy ra", ToastAndroid.SHORT);
@@ -171,7 +178,7 @@ const PostsList = memo(({ posts, status, updatePosts }) => {
                 onRequestClose={handleImageViewingClose}
             />
             <Modal visible={modalVisible} animationType="slide" onRequestClose={onCloseModal}>
-                <ReposnsePost post={selectedPost} onClose={onCloseModal} onSave={handleSave} onSliceIdDeleted={handleDelete}/>
+                <ReposnsePost post={selectedPost} onClose={onCloseModal} onSave={handleSave} onSliceIdDeleted={handleDelete} />
             </Modal>
             <Modal visible={commentModal} animationType="slide" onRequestClose={onCloseModalComment} transparent={true}>
                 <Comment post={selectedPost} onClose={onCloseModalComment} onLogin={handleLogin} />
@@ -236,7 +243,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 200,
         borderRadius: 10,
-        resizeMode:'contain'
+        resizeMode: 'contain'
     },
     postActions: {
         flexDirection: 'row',

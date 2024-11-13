@@ -178,7 +178,7 @@ const PostUpload = ({ route, navigation }) => {
     };
     const deleteArticles = async (id) => {
         try {
-          await firestore().collection('articles').doc(post.id.toString()).delete();
+          await firestore().collection('articles').doc(id.toString()).delete();
           ToastAndroid.show("Xóa thành công", ToastAndroid.SHORT);
           posts = posts.filter(post => post.id !== id);
         } catch (error) {
@@ -199,15 +199,14 @@ const PostUpload = ({ route, navigation }) => {
             }
 
             const articles = await query.get();
-
+            
             // Lọc bài đăng đã tồn tại
             const newPosts = articles.docs
                 .map((doc) => ({ id: doc.id, ...doc.data() }))
                 .filter((newPost) => !posts.some((existingPost) => existingPost.id === newPost.id));
 
             setPosts([...posts, ...newPosts]);
-            setLastDoc(articles.docs[articles.docs.length - 1]); // Cập nhật lastDoc
-
+            setLastDoc(articles.docs[articles.docs.length - 1]); // Cập nhật lastDoc        
         } catch (error) {
             console.error(error);
         } finally {
@@ -216,6 +215,7 @@ const PostUpload = ({ route, navigation }) => {
             setInitialLoading(false);
         }
     };
+
     const memoizedPosts = useMemo(() => {
         return posts.map(post => (
             <View key={post?.id} style={styles.postContainer}>
@@ -246,19 +246,19 @@ const PostUpload = ({ route, navigation }) => {
                 <View style={styles.postActions}>
                     <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(post)}>
                         <MaterialIcons name="thumb-up" size={20} color={isLiked.includes(post.id) ? '#0C6DF2' : '#000'} />
-                        <Text style={styles.actionText}>Like</Text>
+                        {/* <Text style={styles.actionText}>Like</Text> */}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionButton} onPress={() => handleCommentModal(post)}>
                         <MaterialIcons name="comment" size={20} color="#000" />
-                        <Text style={styles.actionText}>Bình luận</Text>
+                        {/* <Text style={styles.actionText}>Bình luận</Text> */}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionButton} onPress={() => onShare(post)}>
                         <MaterialIcons name="share" size={20} color="#000" />
-                        <Text style={styles.actionText}>Chia sẻ</Text>
+                        {/* <Text style={styles.actionText}>Chia sẻ</Text> */}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionButton} onPress={() => handleDeleteArticles(post.id)}>
-                        <MaterialIcons name="trash" size={20} color="#000" />
-                        <Text style={styles.actionText}>Xóa bài đang</Text>
+                        <MaterialIcons name="delete" size={20} color="#ff0000" />
+                        {/* <Text style={styles.actionText}>Xóa</Text> */}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -273,7 +273,7 @@ const PostUpload = ({ route, navigation }) => {
                 <SkeletonPost />
             </ScrollView>
         )
-    } else if (isLiked.length === 0) {
+    } else if (postsUpload.length === 0) {
         return (
             <ImageBackground style={[styles.container, { justifyContent: 'center' }]} source={require("../../assets/background.png")}>
                 <Text style={{ fontSize: 18, textAlign: 'center', padding: 20 }}>
@@ -344,8 +344,8 @@ const styles = StyleSheet.create({
     postActions: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingTop: 10,
-        marginTop: 5,
+        paddingVertical: 10,
+        marginVertical: 5,
         borderTopColor: '#ddd',
     },
     actionButton: {

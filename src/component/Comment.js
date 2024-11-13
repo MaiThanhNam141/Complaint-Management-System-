@@ -99,7 +99,7 @@ const Comment = ({ post, onClose, onLogin }) => {
             // Nếu bài viết có chủ sở hữu (post.uid), thêm tác vụ gửi thông báo vào mảng promises
             if (post?.userUploadUID) {
                 const textNotify = {
-                    content: `Báo cáo có id ${postid} của bạn đã có bình luận mới!`,
+                    content: `Báo cáo có về ${post.title} của bạn đã có bình luận mới!`,
                     id: postid,
                     date: firestore.Timestamp.now(),
                 };

@@ -231,7 +231,7 @@ const ProfileScreen = ({navigation}) => {
                     <MaterialIcons name={"error"} size={30} color={"#49688d"} />
                     <Text style={styles.signOutText}>Giới thiệu về Quản lí sự cố!</Text>
                 </TouchableOpacity>
-                {userInfo.email === 'toikhongphailaadmin@gmail.com' && (
+                {userInfo.email === 'nguyenhongnhien020502@gmail.com' && (
                     <TouchableOpacity onPress={() => navigation.navigate('adminpanel')} style={styles.signOutContainer}>
                         <MaterialIcons name={"supervisor-account"} size={30} color={"#49688d"} />
                         <Text style={styles.signOutText}>Công cụ của Admin</Text>
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
         width: '90%',
         marginTop: 50,
         borderRadius: 20,
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
     },
     logoContainer: {
         position: 'absolute',
@@ -335,7 +335,8 @@ const styles = StyleSheet.create({
     text: {
         fontWeight: '500',
         fontSize: 15,
-        color: '#000'
+        color: '#000',
+        marginTop: 15
     },
     textSub: {
         fontWeight: '400',

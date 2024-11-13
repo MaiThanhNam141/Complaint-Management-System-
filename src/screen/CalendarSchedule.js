@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Agenda } from 'react-native-calendars';
 import firestore from '@react-native-firebase/firestore';
-import { Alert, TouchableOpacity, View, Text, StyleSheet, Linking } from 'react-native';
+import { Alert, TouchableOpacity, View, Text, StyleSheet, Linking, ToastAndroid } from 'react-native';
 
 const CalendarSchedule = () => {
   const [items, setItems] = useState({});
@@ -29,32 +29,32 @@ const CalendarSchedule = () => {
   // Hàm để chuyển đổi articles thành items cho Agenda
   const processArticlesToAgendaItems = (articles) => {
     const newItems = {};
-  
+
     articles.forEach(article => {
       const { title, startRepairDate, completeDate, responseUnit, locate } = article;
-  
+
       // Check if startRepairDate and completeDate are defined and valid
       if (!startRepairDate || !completeDate) {
         console.warn(`Missing start or complete date for article: ${title}`);
         return; // Skip this article if either date is missing
       }
-  
+
       // Convert Firestore Timestamps to Date objects
       const startDate = new Date(startRepairDate.toDate().setHours(0, 0, 0, 0));
       const endDate = new Date(completeDate.toDate().setHours(0, 0, 0, 0));
       let order = 1;
-  
+
       // Loop through each day from startRepairDate to completeDate
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1), order++) {
         const dateString = d.toISOString().split('T')[0];
-  
+
         if (!newItems[dateString]) {
           newItems[dateString] = [];
         }
-  
+
         const isStart = d.getTime() === startDate.getTime();
         const isComplete = d.getTime() === endDate.getTime();
-  
+
         newItems[dateString].push({
           order: order,
           name: title,
@@ -66,10 +66,10 @@ const CalendarSchedule = () => {
         });
       }
     });
-  
+
     return newItems;
   };
-  
+
 
   useEffect(() => {
     const loadArticles = async () => {
@@ -108,7 +108,13 @@ const CalendarSchedule = () => {
 
   const renderItem = (item) => (
     <TouchableOpacity
-      onPress={() => item?.locate && openMap(item.locate.latitude, item.locate.longitude)}
+      onPress={() => {
+        if (item?.locate) {
+          openMap(item.locate.latitude, item.locate.longitude);
+        } else {
+          ToastAndroid.show("Không có dữ liệu về tọa độ của Sự cố này", ToastAndroid.SHORT);
+        }
+      }}
       style={[
         styles.itemContainer,
         item.isStart && styles.startItem,
@@ -117,7 +123,7 @@ const CalendarSchedule = () => {
     >
       <Text style={{ fontStyle: 'italic' }}>
         <Text style={{ fontWeight: '600', fontStyle: 'normal' }}>{item.name}</Text>
-        {` - ngày giải quyết thứ ${item.order}\nĐơn vị chịu trách nhiệm: ${item.responseUnit}`}
+        {` - ngày giải quyết thứ ${item.order}\nĐơn vị chịu trách nhiệm: ${item.responseUnit}\nĐịa chỉ: ${item.address}`}
       </Text>
     </TouchableOpacity>
   );

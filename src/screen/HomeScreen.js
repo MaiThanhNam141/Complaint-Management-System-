@@ -7,7 +7,7 @@ import { UserContext } from '../context/UserContext';
 const screen = Dimensions.get('screen');
 
 const HomeScreen = ({ navigation }) => {
-    const [modalNotificationVisible, setModalNotificationVisible] = useState(true);
+    const [modalNotificationVisible, setModalNotificationVisible] = useState(false);
     const [notRead, setNotRead] = useState(false);
     const [dataNotify, setDataNotify] = useState();
 
