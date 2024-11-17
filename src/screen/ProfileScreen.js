@@ -11,8 +11,6 @@ const ProfileScreen = ({navigation}) => {
     const [loading, setLoading] = useState(false);
     const [userInfo, setUserInfo] = useState({});
     const [refresh, setRefresh] = useState(true);
-    const [isLiked, setIsLiked] = useState([])
-    const [postsUpload, setPostsUpload] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const defaultAvatar = 'https://firebasestorage.googleapis.com/v0/b/disastermanagerment-b0a31.appspot.com/o/users%2Fdefault.png?alt=media&token=5b09c058-8392-424b-bb97-177a4b2c5e76';
 
@@ -23,8 +21,6 @@ const ProfileScreen = ({navigation}) => {
                 const user = await getUserInfo();
                 if (user) {
                     setUserInfo(user);
-                    setIsLiked(user?.likes);
-                    setPostsUpload(user?.postsUpload);
                 }
                 else {
                     const auth = getCurrentUser();
@@ -165,11 +161,11 @@ const ProfileScreen = ({navigation}) => {
     }
 
     const handleLikeArticles = () => {
-        navigation.navigate('postlikes', {likes: isLiked, userData: userInfo});
+        navigation.navigate('postlikes', { userData: userInfo });
     }
 
     const handleUploadArticles = () => {
-        navigation.navigate("postupload", {postsUpload: postsUpload});
+        navigation.navigate("postupload", { userData: userInfo });
     }
 
     const handleResetPassword = async () => {

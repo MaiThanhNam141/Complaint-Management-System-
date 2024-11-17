@@ -5,7 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ImageViewing from 'react-native-image-viewing';
 import PostDetailsModal from './PostDetailsModal';
-import { updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
+import { getUserInfo, updateLikes, updateLikesArticle } from '../context/FirestoreFunction';
 import Comment from './Comment';
 
 const PostUpload = ({ route, navigation }) => {
@@ -22,8 +22,8 @@ const PostUpload = ({ route, navigation }) => {
     const [lastDoc, setLastDoc] = useState(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isLiked, setIsLiked] = useState([]);
-    const [postsUpload, setPostsUpload] = useState(route.params?.postsUpload || []);
-    const [isFetched, setIsFetched] = useState(false);
+    const [postsUpload, setPostsUpload] = useState([]);
+    const [isFetched, setIsFetch] = useState(false);
 
     useEffect(() => {
         const fetchUserUpload = async () => {
@@ -31,17 +31,16 @@ const PostUpload = ({ route, navigation }) => {
                 const user = await getUserInfo();
                 if (user) {
                     setIsLiked(user?.likes || []);
-                    setPostsUpload(user.postsUpload)
+                    setPostsUpload(user?.postsUpload || [])
                 }
             } catch (error) {
                 console.log(error);
             } finally {
-                setIsFetched(true);
+                setIsFetch(true);
             }
         };
 
-        if (!postsUpload.length) fetchUserUpload();
-        else setIsFetched(true); 
+        fetchUserUpload();
     }, []);
 
     const onRefresh = () => {
@@ -285,6 +284,10 @@ const PostUpload = ({ route, navigation }) => {
 
     return (
         <ImageBackground style={styles.container} source={require("../../assets/background.png")}>
+            <View style={styles.header}>
+                <MaterialIcons name="chevron-left" size={50} color="#333" onPress={() => navigation.goBack()} />
+                <Text style={{ fontWeight: '600', fontSize: 15, color: '#000' }}>Về Hồ sơ</Text>
+            </View>
             <ScrollView
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 onScrollEndDrag={handleScroll}
@@ -315,6 +318,15 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f2f5',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
+        backgroundColor: 'transparent',
+        height: 50,
+        width: '100%'
     },
     scrollContent: {
         paddingHorizontal: 10,
